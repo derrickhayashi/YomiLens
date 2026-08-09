@@ -82,7 +82,7 @@ struct DictionaryEntrySheet: View {
 
     private var selectionSummary: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(surface)
+            Text(primaryForm)
                 .font(.largeTitle)
                 .fontWeight(.semibold)
 
@@ -92,10 +92,14 @@ struct DictionaryEntrySheet: View {
                     .foregroundStyle(.blue)
             }
 
-            if let dictionaryForm {
-                LabeledContent("Dictionary form", value: dictionaryForm)
+            if primaryForm != surface {
+                LabeledContent("Form in passage", value: surface)
             }
         }
+    }
+
+    private var primaryForm: String {
+        dictionaryForm ?? surface
     }
 
     private var surface: String {
@@ -107,7 +111,7 @@ struct DictionaryEntrySheet: View {
 
     private var reading: String? {
         switch selection {
-        case .token(let token): token.reading
+        case .token(let token): entry?.reading ?? token.reading
         case .expression(let expression): expression.entry.reading
         }
     }
