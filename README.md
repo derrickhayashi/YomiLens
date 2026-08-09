@@ -8,8 +8,12 @@ detail sheet and marked as a word to learn.
 
 Token analysis uses Mecab-Swift 0.8.0 with its bundled IPADic dictionary. It
 provides hiragana readings, dictionary forms, and parts of speech without a
-network connection. The current debug app is approximately 55 MB, primarily
-because the dictionary resource is approximately 51 MB.
+network connection. The generated JMdict database adds roughly 64 MB to the
+app, while the MeCab dictionary resource adds roughly 51 MB.
+
+MeCab runs one pass for hiragana readings and a second pass that preserves
+kanji in dictionary forms. This keeps results such as `潜ん → 潜む` instead of
+losing the lemma spelling as `ひそむ` without degrading furigana alignment.
 
 ## Run on an iPhone
 
@@ -29,6 +33,44 @@ The simulator can build and display the initial screen, but the scan button
 reports that no camera is available. Use a physical iPhone to evaluate OCR
 against a television.
 
+## Build the JMdict database
+
+The app's offline dictionary has a dependency-free Python build pipeline:
+
+```sh
+python3 tools/build_jmdict.py
+```
+
+The script downloads EDRDG's current English-only JMdict Next Generation
+archive to `.cache/jmdict/` and creates
+`YomiLens/Resources/JMdict.sqlite3`. Both are intentionally ignored by Git, so
+run this command once after cloning and whenever the dictionary should be
+refreshed. Xcode bundles the result as a read-only app resource. Refresh the
+cached daily release with:
+
+```sh
+python3 tools/build_jmdict.py --force-download
+```
+
+Run the pipeline unit test with:
+
+```sh
+python3 -m unittest discover -s tools -p 'test_*.py' -v
+```
+
+The SQLite database stores the JMdict release date, DTD version, source URL,
+SHA-256 checksum, and entry count. Its normalized tables retain spellings,
+readings and their restrictions, priority markers, ordered senses, inherited
+parts of speech, and English glosses. It also exposes a `lookup_terms` view
+indexed by written form and reading.
+
+JMdict is updated daily and is currently distributed under CC BY-SA 4.0. The
+generated database embeds the required source attribution and licence URL;
+the app displays those details from its Sources screen. Refresh the bundled
+release regularly before shipping. See the [official JMdict project](https://www.edrdg.org/jmdict/j_jmdict.html),
+[archive index](https://www.edrdg.org/pub/Nihongo/00INDEX.html), and
+[EDRDG licence](https://www.edrdg.org/edrdg/licence.html).
+
 ## Preview structure
 
 - `ContentView.swift` owns the screen state and starts capture and OCR.
@@ -44,14 +86,18 @@ against a television.
 - `FuriganaPassageView.swift` renders the complete passage as natural continuous
   text with Core Text ruby annotations above kanji. Content words have dotted
   underlines and open the same dictionary sheet when tapped.
-- `DictionaryService.swift` provides the deliberately small, replaceable preview
-  lexicon and lemma-first lookup.
+- `DictionaryService.swift` opens the bundled SQLite database read-only and
+  performs ranked, lemma-first JMdict lookup.
 - `DictionaryEntrySheet.swift` shows readings, meanings, and the session-only
   "Learn this word" interaction.
+- `SourcesView.swift` displays the bundled JMdict release, attribution, and
+  licence link.
+- `tools/build_jmdict.py` downloads and converts the English-only JMdict NG
+  distribution into a compact, read-only SQLite artifact.
 
 The preview intentionally has no sentence translation, persistent learning
-list, custom camera, or backend. Its vocabulary definitions come from a tiny
-hand-authored starter lexicon, not yet the planned JMdict database.
+list, custom camera, or backend. Vocabulary definitions come from the generated
+JMdict database and remain fully offline at runtime.
 
 IPADic is old and will not recognize every proper noun, game-specific term, or
 modern expression. Before distribution, review the licenses of Mecab-Swift,

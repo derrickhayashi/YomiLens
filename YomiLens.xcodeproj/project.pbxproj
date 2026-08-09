@@ -20,6 +20,9 @@
 		10000000000000000000000B /* DictionaryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000000A /* DictionaryService.swift */; };
 		10000000000000000000000C /* DictionaryEntrySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000000B /* DictionaryEntrySheet.swift */; };
 		10000000000000000000000D /* FuriganaPassageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000000C /* FuriganaPassageView.swift */; };
+		10000000000000000000000E /* SourcesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000000D /* SourcesView.swift */; };
+		10000000000000000000000F /* JMdict.sqlite3 in Resources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000000E /* JMdict.sqlite3 */; };
+		100000000000000000000010 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 20000000000000000000000F /* libsqlite3.tbd */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,6 +38,9 @@
 		20000000000000000000000A /* DictionaryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryService.swift; sourceTree = "<group>"; };
 		20000000000000000000000B /* DictionaryEntrySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryEntrySheet.swift; sourceTree = "<group>"; };
 		20000000000000000000000C /* FuriganaPassageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FuriganaPassageView.swift; sourceTree = "<group>"; };
+		20000000000000000000000D /* SourcesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourcesView.swift; sourceTree = "<group>"; };
+		20000000000000000000000E /* JMdict.sqlite3 */ = {isa = PBXFileReference; lastKnownFileType = file; path = Resources/JMdict.sqlite3; sourceTree = "<group>"; };
+		20000000000000000000000F /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.text-based-dylib-definition; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -42,6 +48,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				100000000000000000000010 /* libsqlite3.tbd in Frameworks */,
 				100000000000000000000008 /* Mecab-Swift in Frameworks */,
 				100000000000000000000009 /* IPADic in Frameworks */,
 			);
@@ -72,6 +79,8 @@
 				20000000000000000000000A /* DictionaryService.swift */,
 				20000000000000000000000B /* DictionaryEntrySheet.swift */,
 				20000000000000000000000C /* FuriganaPassageView.swift */,
+				20000000000000000000000D /* SourcesView.swift */,
+				20000000000000000000000E /* JMdict.sqlite3 */,
 			);
 			path = YomiLens;
 			sourceTree = "<group>";
@@ -150,6 +159,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				10000000000000000000000A /* Assets.xcassets in Resources */,
+				10000000000000000000000F /* JMdict.sqlite3 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -170,6 +180,7 @@
 				10000000000000000000000B /* DictionaryService.swift in Sources */,
 				10000000000000000000000C /* DictionaryEntrySheet.swift in Sources */,
 				10000000000000000000000D /* FuriganaPassageView.swift in Sources */,
+				10000000000000000000000E /* SourcesView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

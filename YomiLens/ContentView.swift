@@ -11,6 +11,7 @@ struct ContentView: View {
     @State private var selectedToken: JapaneseToken?
     @State private var learnedEntryIDs: Set<String> = []
     @State private var errorMessage: String?
+    @State private var isShowingSources = false
 
     var body: some View {
         NavigationStack {
@@ -114,6 +115,15 @@ struct ContentView: View {
                 .padding()
             }
             .navigationTitle("YomiLens")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        isShowingSources = true
+                    } label: {
+                        Label("Sources", systemImage: "info.circle")
+                    }
+                }
+            }
             .onChange(of: recognizedText) { _, newText in
                 tokenization = JapaneseTokenizer.tokenize(newText)
             }
@@ -122,6 +132,9 @@ struct ContentView: View {
                     token: token,
                     learnedEntryIDs: $learnedEntryIDs
                 )
+            }
+            .sheet(isPresented: $isShowingSources) {
+                SourcesView()
             }
             .fullScreenCover(isPresented: $isShowingCamera) {
                 CameraPicker(

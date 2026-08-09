@@ -16,17 +16,23 @@ struct DictionaryEntrySheet: View {
                 VStack(alignment: .leading, spacing: 20) {
                     tokenSummary
 
-                    if let entry {
+                    if !DictionaryService.isAvailable {
+                        ContentUnavailableView(
+                            "Dictionary unavailable",
+                            systemImage: "externaldrive.badge.exclamationmark",
+                            description: Text("Generate the bundled database with `python3 tools/build_jmdict.py`, then rebuild the app.")
+                        )
+                    } else if let entry {
                         entryDetails(entry)
                     } else {
                         ContentUnavailableView(
-                            "Not in the preview dictionary",
+                            "No JMdict entry found",
                             systemImage: "books.vertical",
-                            description: Text("The tokenization worked, but this tiny starter lexicon does not contain this word yet.")
+                            description: Text("The tokenizer found this word, but the bundled JMdict release has no matching written form, reading, or lemma.")
                         )
                     }
 
-                    Text("This preview uses a small built-in lexicon. A full JMdict index will replace it after the interaction is validated.")
+                    Text(DictionaryService.sourceDescription.map { "Offline dictionary: \($0)." } ?? "The offline JMdict database is not bundled in this build.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

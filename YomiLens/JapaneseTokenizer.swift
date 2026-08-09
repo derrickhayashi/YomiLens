@@ -1,3 +1,4 @@
+import Foundation
 import IPADic
 import Mecab_Swift
 import NaturalLanguage
@@ -61,6 +62,12 @@ enum JapaneseTokenizer {
             text: text,
             transliteration: .hiragana
         )
+        let lemmaAnnotations = mecabTokenizer.tokenize(
+            text: text,
+            // The package also transliterates dictionaryForm in hiragana
+            // mode, so a second fast pass preserves the original kanji.
+            transliteration: .katakana
+        )
 
         let furiganaSpans = annotations.compactMap { annotation -> FuriganaSpan? in
             guard let furigana = annotation.furiganaAnnotation(
@@ -87,8 +94,15 @@ enum JapaneseTokenizer {
                 sentenceGroup += 1
             }
 
+            let preservedDictionaryForm: String
+            if lemmaAnnotations.indices.contains(index),
+               lemmaAnnotations[index].range == annotation.range {
+                preservedDictionaryForm = lemmaAnnotations[index].dictionaryForm
+            } else {
+                preservedDictionaryForm = annotation.dictionaryForm
+            }
             let dictionaryForm = normalizedDictionaryForm(
-                annotation.dictionaryForm,
+                preservedDictionaryForm,
                 surface: annotation.base
             )
 

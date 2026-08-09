@@ -170,11 +170,12 @@ showing its surface form, reading, lemma, part of speech, and a few English
 glosses. The user can mark the entry as useful for the current session. This
 tests the core learning interaction before persistence or Anki export exists.
 
-The first implementation uses a deliberately small built-in lexicon behind a
-replaceable lookup service. Once the interaction is validated, a build-time
-pipeline should transform the English-only JMdict distribution into a compact,
-versioned SQLite database. The app should query that bundled database by lemma,
-written form, and reading rather than parsing JMdict XML at runtime.
+The implementation uses a dependency-free, build-time Python pipeline that
+transforms the English-only JMdict Next Generation distribution into a compact,
+versioned SQLite database. Xcode bundles that generated artifact, and the app
+opens it read-only to query by lemma, written form, and reading. JMdict XML is
+never parsed at runtime, and the dictionary requires no backend or network
+connection.
 
 ### 4.7 Anki Export
 
@@ -251,6 +252,11 @@ The analysis model should therefore distinguish at least:
 - surface form;
 - lemma;
 - reading.
+
+Mecab-Swift must be invoked without transliterating the dictionary-form field.
+YomiLens uses separate deterministic annotation and lemma passes so it can keep
+hiragana readings while preserving the original kanji lemma. This avoids
+turning a useful lookup key such as `潜む` into `ひそむ`.
 
 ---
 
@@ -398,6 +404,8 @@ Initial technologies:
 - Apple Natural Language
 - Mecab-Swift
 - bundled IPADic
+- SQLite
+- Python build-time JMdict conversion
 - PhotosPicker
 - Swift structured concurrency
 - Observation
