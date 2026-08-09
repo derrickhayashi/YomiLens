@@ -30,7 +30,19 @@
 		100000000000000000000015 /* JapaneseAnalysisService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000014 /* JapaneseAnalysisService.swift */; };
 		100000000000000000000016 /* DebouncedAnalysisScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000015 /* DebouncedAnalysisScheduler.swift */; };
 		100000000000000000000017 /* SavedVocabularyRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000016 /* SavedVocabularyRepository.swift */; };
+		E10000000000000000000001 /* OCRPipelineFixtureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000001 /* OCRPipelineFixtureTests.swift */; };
+		E10000000000000000000002 /* Fixtures in Resources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000002 /* Fixtures */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		E80000000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 800000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 500000000000000000000001;
+			remoteInfo = YomiLens;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		200000000000000000000001 /* YomiLensApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YomiLensApp.swift; sourceTree = "<group>"; };
@@ -55,6 +67,9 @@
 		200000000000000000000014 /* JapaneseAnalysisService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JapaneseAnalysisService.swift; sourceTree = "<group>"; };
 		200000000000000000000015 /* DebouncedAnalysisScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebouncedAnalysisScheduler.swift; sourceTree = "<group>"; };
 		200000000000000000000016 /* SavedVocabularyRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedVocabularyRepository.swift; sourceTree = "<group>"; };
+		E20000000000000000000001 /* OCRPipelineFixtureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OCRPipelineFixtureTests.swift; sourceTree = "<group>"; };
+		E20000000000000000000002 /* Fixtures */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Fixtures; sourceTree = "<group>"; };
+		E20000000000000000000003 /* YomiLensTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = YomiLensTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -68,6 +83,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E30000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -75,6 +97,7 @@
 			isa = PBXGroup;
 			children = (
 				400000000000000000000002 /* YomiLens */,
+				E40000000000000000000001 /* YomiLensTests */,
 				400000000000000000000003 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -110,8 +133,18 @@
 			isa = PBXGroup;
 			children = (
 				200000000000000000000005 /* YomiLens.app */,
+				E20000000000000000000003 /* YomiLensTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		E40000000000000000000001 /* YomiLensTests */ = {
+			isa = PBXGroup;
+			children = (
+				E20000000000000000000001 /* OCRPipelineFixtureTests.swift */,
+				E20000000000000000000002 /* Fixtures */,
+			);
+			path = YomiLensTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -138,6 +171,26 @@
 			productReference = 200000000000000000000005 /* YomiLens.app */;
 			productType = "com.apple.product-type.application";
 		};
+		E50000000000000000000001 /* YomiLensTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E90000000000000000000003 /* Build configuration list for PBXNativeTarget "YomiLensTests" */;
+			buildPhases = (
+				E60000000000000000000001 /* Sources */,
+				E30000000000000000000001 /* Frameworks */,
+				E70000000000000000000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E81000000000000000000001 /* PBXTargetDependency */,
+			);
+			name = YomiLensTests;
+			packageProductDependencies = (
+			);
+			productName = YomiLensTests;
+			productReference = E20000000000000000000003 /* YomiLensTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -150,6 +203,10 @@
 				TargetAttributes = {
 					500000000000000000000001 = {
 						CreatedOnToolsVersion = 26.6;
+					};
+					E50000000000000000000001 = {
+						CreatedOnToolsVersion = 26.6;
+						TestTargetID = 500000000000000000000001;
 					};
 				};
 			};
@@ -170,6 +227,7 @@
 			projectRoot = "";
 			targets = (
 				500000000000000000000001 /* YomiLens */,
+				E50000000000000000000001 /* YomiLensTests */,
 			);
 		};
 /* End PBXProject section */
@@ -181,6 +239,14 @@
 			files = (
 				10000000000000000000000A /* Assets.xcassets in Resources */,
 				10000000000000000000000F /* JMdict.sqlite3 in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E70000000000000000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E10000000000000000000002 /* Fixtures in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -212,7 +278,23 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E60000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E10000000000000000000001 /* OCRPipelineFixtureTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		E81000000000000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 500000000000000000000001 /* YomiLens */;
+			targetProxy = E80000000000000000000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		A00000000000000000000001 /* Debug */ = {
@@ -380,6 +462,50 @@
 			};
 			name = Release;
 		};
+		E90000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 637XJTGN6W;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.derrick.YomiLensTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/YomiLens.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/YomiLens";
+			};
+			name = Debug;
+		};
+		E90000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 637XJTGN6W;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.derrick.YomiLensTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/YomiLens.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/YomiLens";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -397,6 +523,15 @@
 			buildConfigurations = (
 				A00000000000000000000003 /* Debug */,
 				A00000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E90000000000000000000003 /* Build configuration list for PBXNativeTarget "YomiLensTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E90000000000000000000001 /* Debug */,
+				E90000000000000000000002 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

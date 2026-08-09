@@ -72,6 +72,25 @@ Run the pipeline unit test with:
 python3 -m unittest discover -s tools -p 'test_*.py' -v
 ```
 
+Run screenshot fixtures through the real Vision → MeCab → JMdict pipeline in
+an iPhone Simulator with:
+
+```sh
+xcodebuild test \
+  -project YomiLens.xcodeproj \
+  -scheme YomiLens \
+  -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.5' \
+  -only-testing:YomiLensTests/OCRPipelineFixtureTests \
+  CODE_SIGNING_ALLOWED=NO
+```
+
+The committed fixtures under `YomiLensTests/Fixtures` contain original Japanese
+text and required dictionary forms and expressions. Tests render that text into
+images at runtime and run the real Vision → MeCab → JMdict pipeline without
+third-party game screenshots. These synthetic images exercise clean-text OCR;
+they do not reproduce television backgrounds, game fonts, or camera artifacts.
+Private screenshots remain ignored and are not used by the public fixtures.
+
 The SQLite database stores the JMdict release date, DTD version, source URL,
 SHA-256 checksum, and entry count. Its normalized tables retain spellings,
 readings and their restrictions, priority markers, ordered senses, inherited

@@ -6,3 +6,9 @@ Generated/
 YomiLens/Resources/JMdict.sqlite3
 __pycache__/
 *.pyc
+
+# Local OCR fixtures may contain copyrighted or private screenshots.
+YomiLensTests/Fixtures/*.jpg
+YomiLensTests/Fixtures/*.jpeg
+YomiLensTests/Fixtures/*.png
+YomiLensTests/Fixtures/*.heic
