@@ -15,6 +15,12 @@ MeCab runs one pass for hiragana readings and a second pass that preserves
 kanji in dictionary forms. This keeps results such as `潜ん → 潜む` instead of
 losing the lemma spelling as `ひそむ` without degrading furigana alignment.
 
+Dictionary matching considers the lemma, surface form, and reading together.
+It normalizes compatibility characters and kana readings, ranks all plausible
+JMdict entries using reading, part of speech, frequency, and preferred-form
+signals, and applies JMdict's reading, spelling, and sense restrictions before
+choosing the displayed meanings.
+
 ## Run on an iPhone
 
 1. Open `YomiLens.xcodeproj` in Xcode.
@@ -66,7 +72,7 @@ indexed by written form and reading.
 
 JMdict is updated daily and is currently distributed under CC BY-SA 4.0. The
 generated database embeds the required source attribution and licence URL;
-the app displays those details from its Sources screen. Refresh the bundled
+the app displays those details from its About screen. Refresh the bundled
 release regularly before shipping. See the [official JMdict project](https://www.edrdg.org/jmdict/j_jmdict.html),
 [archive index](https://www.edrdg.org/pub/Nihongo/00INDEX.html), and
 [EDRDG licence](https://www.edrdg.org/edrdg/licence.html).
@@ -94,6 +100,8 @@ release regularly before shipping. See the [official JMdict project](https://www
   licence link.
 - `tools/build_jmdict.py` downloads and converts the English-only JMdict NG
   distribution into a compact, read-only SQLite artifact.
+- `tools/dictionary_matching_harness.swift` exercises the production Swift
+  matcher against generated regression dictionaries.
 
 The preview intentionally has no sentence translation, persistent learning
 list, custom camera, or backend. Vocabulary definitions come from the generated

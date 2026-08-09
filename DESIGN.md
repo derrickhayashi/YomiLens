@@ -177,6 +177,14 @@ opens it read-only to query by lemma, written form, and reading. JMdict XML is
 never parsed at runtime, and the dictionary requires no backend or network
 connection.
 
+Single-word matching ranks candidates across lemma, surface form, and reading.
+The score also considers exact versus normalized matches, JMdict priority
+markers, and broad MeCab/JMdict part-of-speech compatibility. Before presenting
+an entry, the app enforces JMdict reading-to-spelling restrictions and filters
+senses by their spelling and reading restrictions. Multiword expression
+matching remains a separate follow-up because it changes token selection and
+passage interaction rather than only dictionary ranking.
+
 ### 4.7 Anki Export
 
 Selected items are transformed into high-quality Anki notes.
@@ -723,6 +731,17 @@ Target workflow:
 ---
 
 ## Milestone 4 — Japanese UX
+
+Milestone 4A improves single-word dictionary matching:
+
+- normalize compatibility characters and kana readings;
+- rank lemma, surface, and reading candidates together;
+- use reading, part of speech, frequency, and preferred-form signals;
+- enforce JMdict reading, spelling, and sense restrictions;
+- cover ambiguous and restricted entries with an executable regression suite.
+
+Milestone 4B will add multiword expression recognition and deeper contextual
+sense ranking.
 
 Improve:
 

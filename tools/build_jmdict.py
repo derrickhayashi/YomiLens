@@ -13,6 +13,7 @@ from pathlib import Path
 import shutil
 import sqlite3
 import sys
+import unicodedata
 import urllib.request
 import xml.etree.ElementTree as ET
 
@@ -23,7 +24,7 @@ DEFAULT_SOURCE_URL = (
 DEFAULT_ARCHIVE = Path(".cache/jmdict/JMdict_e_NG.gz")
 DEFAULT_OUTPUT = Path("YomiLens/Resources/JMdict.sqlite3")
 XML_LANGUAGE = "{http://www.w3.org/XML/1998/namespace}lang"
-SCHEMA_VERSION = "1"
+SCHEMA_VERSION = "2"
 LICENSE_NAME = "Creative Commons Attribution-ShareAlike 4.0"
 LICENSE_URL = "https://www.edrdg.org/edrdg/licence.html"
 ATTRIBUTION = (
@@ -136,10 +137,12 @@ CREATE INDEX readings_lookup ON readings(reading);
 CREATE INDEX glosses_by_entry ON sense_glosses(entry_id, sense_order);
 
 CREATE VIEW lookup_terms AS
-SELECT spelling AS term, entry_id, 'spelling' AS term_type, sort_order
+SELECT spelling AS term, spelling AS normalized_term,
+       entry_id, 'spelling' AS term_type, sort_order
 FROM spellings
 UNION ALL
-SELECT reading AS term, entry_id, 'reading' AS term_type, sort_order
+SELECT reading AS term, reading AS normalized_term,
+       entry_id, 'reading' AS term_type, sort_order
 FROM readings;
 """
 
@@ -157,6 +160,20 @@ def child_texts(element: ET.Element, tag: str) -> list[str]:
         for child in element.findall(tag)
         if (value := text_of(child)) is not None
     ]
+
+
+def normalize_spelling(value: str) -> str:
+    return unicodedata.normalize("NFKC", value)
+
+
+def normalize_reading(value: str) -> str:
+    normalized = unicodedata.normalize("NFKC", value)
+    return "".join(
+        chr(ord(character) - 0x60)
+        if "ァ" <= character <= "ヶ"
+        else character
+        for character in normalized
+    )
 
 
 def download(source_url: str, archive_path: Path, force: bool) -> None:
