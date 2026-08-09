@@ -51,6 +51,18 @@ MATCHING_FIXTURE = """<?xml version="1.0" encoding="UTF-8"?>
     <r_ele><reb>けさ</reb><re_restr>今朝</re_restr></r_ele>
     <sense><pos>noun (common)</pos><gloss>time expression</gloss></sense>
   </entry>
+  <entry>
+    <ent_seq>6001</ent_seq>
+    <k_ele><keb>気がする</keb></k_ele>
+    <r_ele><reb>きがする</reb></r_ele>
+    <sense><pos>expression</pos><gloss>to have a feeling</gloss></sense>
+  </entry>
+  <entry>
+    <ent_seq>6002</ent_seq>
+    <k_ele><keb>手に入れる</keb></k_ele>
+    <r_ele><reb>てにいれる</reb></r_ele>
+    <sense><pos>expression</pos><gloss>to obtain</gloss></sense>
+  </entry>
 </JMdict>
 """
 
@@ -92,6 +104,9 @@ class DictionaryMatchingTests(unittest.TestCase):
                 ).stdout.strip()
                 return result.split("\t")
 
+            def match_expression(surface: str, reading: str, lemma: str):
+                return match(surface, reading, lemma, "EXPRESSION")
+
             self.assertEqual(
                 match("開く", "ひらく", "-", "verb")[:3],
                 ["2002", "開く", "ひらく"],
@@ -106,6 +121,21 @@ class DictionaryMatchingTests(unittest.TestCase):
             self.assertEqual(
                 match("今日", "けさ", "-", "noun")[2],
                 "きょう",
+            )
+            self.assertEqual(
+                match_expression("気がする", "きがする", "-")[:3],
+                ["6001", "気がする", "きがする"],
+            )
+            inflected_expression = match_expression(
+                "手に入れた",
+                "てにいれた",
+                "手に入れる",
+            )
+            self.assertEqual(inflected_expression[0], "6002")
+            self.assertEqual(inflected_expression[4], "to obtain")
+            self.assertEqual(
+                match_expression("気賀する", "きがする", "-")[0],
+                "NO_MATCH",
             )
 
 

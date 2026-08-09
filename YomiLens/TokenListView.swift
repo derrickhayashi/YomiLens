@@ -2,7 +2,8 @@ import SwiftUI
 
 struct TokenListView: View {
     let tokens: [JapaneseToken]
-    let onSelect: (JapaneseToken) -> Void
+    let expressions: [JapaneseExpression]
+    let onSelect: (DictionarySelection) -> Void
 
     private let columns = [
         GridItem(.adaptive(minimum: 88), spacing: 8, alignment: .top)
@@ -20,11 +21,54 @@ struct TokenListView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
+            if !expressions.isEmpty {
+                Text("Expressions")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+
+                LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
+                    ForEach(expressions) { expression in
+                        Button {
+                            onSelect(.expression(expression))
+                        } label: {
+                            VStack(spacing: 2) {
+                                Text(expression.entry.reading)
+                                    .font(.caption2)
+                                    .foregroundStyle(.blue)
+
+                                Text(expression.surface)
+                                    .font(.title3)
+                                    .foregroundStyle(.primary)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.7)
+
+                                Text(expression.entry.meanings.first ?? "Expression")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(2)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 6)
+                            .background(.indigo.opacity(0.14), in: RoundedRectangle(cornerRadius: 8))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("Expression: \(expression.surface), reading: \(expression.entry.reading)")
+                        .accessibilityHint("Opens expression details")
+                    }
+                }
+
+                Text("Individual words")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+            }
+
             ForEach(Array(sentenceGroups.enumerated()), id: \.offset) { _, sentenceTokens in
                 LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
                     ForEach(sentenceTokens) { token in
                         Button {
-                            onSelect(token)
+                            onSelect(.token(token))
                         } label: {
                             VStack(spacing: 2) {
                                 Text(token.reading ?? " ")

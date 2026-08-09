@@ -44,6 +44,20 @@ enum DictionaryService {
     static func lookup(_ token: JapaneseToken) -> DictionaryEntry? {
         database?.lookup(token)
     }
+
+    static func lookupExpression(
+        surface: String,
+        reading: String?,
+        dictionaryForm: String?
+    ) -> DictionaryEntry? {
+        database?.lookup(
+            surface: surface,
+            reading: reading,
+            dictionaryForm: dictionaryForm,
+            partOfSpeech: nil,
+            includeReadingCandidate: false
+        )
+    }
 }
 
 private enum MatchKind {
@@ -133,8 +147,29 @@ final class DictionaryDatabase {
     }
 
     func lookup(_ token: JapaneseToken) -> DictionaryEntry? {
-        let candidates = lookupCandidates(for: token)
-        let preferredReading = token.reading.map(normalizeReading)
+        lookup(
+            surface: token.surface,
+            reading: token.reading,
+            dictionaryForm: token.dictionaryForm,
+            partOfSpeech: token.partOfSpeech,
+            includeReadingCandidate: true
+        )
+    }
+
+    func lookup(
+        surface: String,
+        reading: String?,
+        dictionaryForm: String?,
+        partOfSpeech tokenPartOfSpeech: String?,
+        includeReadingCandidate: Bool = true
+    ) -> DictionaryEntry? {
+        let candidates = lookupCandidates(
+            surface: surface,
+            reading: reading,
+            dictionaryForm: dictionaryForm,
+            includeReading: includeReadingCandidate
+        )
+        let preferredReading = reading.map(normalizeReading)
         var bestMatches: [Int64: EntryMatch] = [:]
         var partsOfSpeechCache: [Int64: [String]] = [:]
 
@@ -167,7 +202,7 @@ final class DictionaryDatabase {
                     ?? entryPartsOfSpeech(row.entryID)
                 partsOfSpeechCache[row.entryID] = partsOfSpeech
                 if partsOfSpeech.contains(where: {
-                    partOfSpeech($0, matches: token.partOfSpeech)
+                    partOfSpeech($0, matches: tokenPartOfSpeech)
                 }) {
                     score += 45
                 }
@@ -189,7 +224,7 @@ final class DictionaryDatabase {
             if let result = dictionaryEntry(
                 for: match,
                 preferredReading: preferredReading,
-                tokenPartOfSpeech: token.partOfSpeech
+                tokenPartOfSpeech: tokenPartOfSpeech
             ) {
                 return result
             }
@@ -198,7 +233,12 @@ final class DictionaryDatabase {
         return nil
     }
 
-    private func lookupCandidates(for token: JapaneseToken) -> [LookupCandidate] {
+    private func lookupCandidates(
+        surface: String,
+        reading: String?,
+        dictionaryForm: String?,
+        includeReading: Bool
+    ) -> [LookupCandidate] {
         var candidates: [LookupCandidate] = []
         var seen = Set<String>()
 
@@ -218,9 +258,11 @@ final class DictionaryDatabase {
             )
         }
 
-        append(token.dictionaryForm, kind: .lemma)
-        append(token.surface, kind: .surface)
-        append(token.reading, kind: .reading, reading: true)
+        append(dictionaryForm, kind: .lemma)
+        append(surface, kind: .surface)
+        if includeReading {
+            append(reading, kind: .reading, reading: true)
+        }
         return candidates
     }
 

@@ -181,9 +181,16 @@ Single-word matching ranks candidates across lemma, surface form, and reading.
 The score also considers exact versus normalized matches, JMdict priority
 markers, and broad MeCab/JMdict part-of-speech compatibility. Before presenting
 an entry, the app enforces JMdict reading-to-spelling restrictions and filters
-senses by their spelling and reading restrictions. Multiword expression
-matching remains a separate follow-up because it changes token selection and
-passage interaction rather than only dictionary ranking.
+senses by their spelling and reading restrictions.
+
+Multiword expression matching scans adjacent tokens within a sentence while
+retaining particles inside each candidate. It tries the longest spans first,
+checks both captured surface text and useful final-lemma phrase forms, and keeps
+non-overlapping JMdict matches. Recognized expressions appear as blue dashed
+ranges in the passage and as expression cards in the breakdown. Tapping either
+opens the dictionary sheet, while the individual word cards remain available.
+This first deterministic pass uses the exact expression as context; ranking an
+ambiguous sense from the wider sentence remains future contextual analysis.
 
 ### 4.7 Anki Export
 
@@ -740,8 +747,15 @@ Milestone 4A improves single-word dictionary matching:
 - enforce JMdict reading, spelling, and sense restrictions;
 - cover ambiguous and restricted entries with an executable regression suite.
 
-Milestone 4B will add multiword expression recognition and deeper contextual
-sense ranking.
+Milestone 4B adds deterministic multiword expression recognition:
+
+- scan adjacent tokens within each sentence, including internal particles;
+- try surface and phrase-lemma forms over spans of up to eight tokens;
+- prefer the longest non-overlapping JMdict match;
+- show tappable expression ranges and cards without removing individual words;
+- cover exact and inflected expression lookup in the regression suite.
+
+Deeper whole-sentence sense ranking remains a later contextual-analysis step.
 
 Improve:
 

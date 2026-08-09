@@ -1,20 +1,39 @@
 import SwiftUI
 
+enum DictionarySelection: Identifiable {
+    case token(JapaneseToken)
+    case expression(JapaneseExpression)
+
+    var id: String {
+        switch self {
+        case .token(let token):
+            "token-\(token.id)"
+        case .expression(let expression):
+            "expression-\(expression.id)"
+        }
+    }
+}
+
 struct DictionaryEntrySheet: View {
-    let token: JapaneseToken
+    let selection: DictionarySelection
     @Binding var learnedEntryIDs: Set<String>
 
     @Environment(\.dismiss) private var dismiss
 
     private var entry: DictionaryEntry? {
-        DictionaryService.lookup(token)
+        switch selection {
+        case .token(let token):
+            DictionaryService.lookup(token)
+        case .expression(let expression):
+            expression.entry
+        }
     }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    tokenSummary
+                    selectionSummary
 
                     if !DictionaryService.isAvailable {
                         ContentUnavailableView(
@@ -39,7 +58,7 @@ struct DictionaryEntrySheet: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding()
             }
-            .navigationTitle("Word details")
+            .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -52,21 +71,51 @@ struct DictionaryEntrySheet: View {
         .presentationDetents([.medium, .large])
     }
 
-    private var tokenSummary: some View {
+    private var navigationTitle: String {
+        switch selection {
+        case .token:
+            "Word details"
+        case .expression:
+            "Expression details"
+        }
+    }
+
+    private var selectionSummary: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(token.surface)
+            Text(surface)
                 .font(.largeTitle)
                 .fontWeight(.semibold)
 
-            if let reading = token.reading {
+            if let reading {
                 Text(reading)
                     .font(.title3)
                     .foregroundStyle(.blue)
             }
 
-            if let dictionaryForm = token.dictionaryForm {
+            if let dictionaryForm {
                 LabeledContent("Dictionary form", value: dictionaryForm)
             }
+        }
+    }
+
+    private var surface: String {
+        switch selection {
+        case .token(let token): token.surface
+        case .expression(let expression): expression.surface
+        }
+    }
+
+    private var reading: String? {
+        switch selection {
+        case .token(let token): token.reading
+        case .expression(let expression): expression.entry.reading
+        }
+    }
+
+    private var dictionaryForm: String? {
+        switch selection {
+        case .token(let token): token.dictionaryForm
+        case .expression(let expression): expression.dictionaryForm
         }
     }
 

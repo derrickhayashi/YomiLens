@@ -10,7 +10,7 @@ struct ContentView: View {
     @State private var recognizedRegions: [OCRRegion] = []
     @State private var recognizedText = ""
     @State private var tokenization = JapaneseTokenization.empty
-    @State private var selectedToken: JapaneseToken?
+    @State private var dictionarySelection: DictionarySelection?
     @State private var learnedEntryIDs: Set<String> = []
     @State private var errorMessage: String?
     @State private var isShowingMyList = false
@@ -65,9 +65,10 @@ struct ContentView: View {
                             FuriganaPassageView(
                                 text: recognizedText,
                                 spans: tokenization.furiganaSpans,
-                                tokens: tokenization.tokens
-                            ) { token in
-                                selectedToken = token
+                                tokens: tokenization.tokens,
+                                expressions: tokenization.expressions
+                            ) { selection in
+                                dictionarySelection = selection
                             }
                             .id(passageRenderGeneration)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -81,11 +82,14 @@ struct ContentView: View {
                             Text("Word breakdown")
                                 .font(.headline)
 
-                            TokenListView(tokens: tokenization.tokens) { token in
-                                selectedToken = token
+                            TokenListView(
+                                tokens: tokenization.tokens,
+                                expressions: tokenization.expressions
+                            ) { selection in
+                                dictionarySelection = selection
                             }
 
-                            Text("\(tokenization.source.label). Tap a dotted word in the passage or a card below for dictionary details. Particles and punctuation are omitted from the word breakdown.")
+                            Text("\(tokenization.source.label). Blue dashed underlines mark recognized expressions; dotted underlines mark individual words. Particles and punctuation are omitted from the word cards.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
 
@@ -121,9 +125,9 @@ struct ContentView: View {
                 // SwiftUI measures it from the same fresh layout it draws.
                 passageRenderGeneration += 1
             }
-            .sheet(item: $selectedToken) { token in
+            .sheet(item: $dictionarySelection) { selection in
                 DictionaryEntrySheet(
-                    token: token,
+                    selection: selection,
                     learnedEntryIDs: $learnedEntryIDs
                 )
             }

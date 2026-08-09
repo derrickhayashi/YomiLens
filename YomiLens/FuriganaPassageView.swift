@@ -194,7 +194,8 @@ struct FuriganaPassageView: UIViewRepresentable {
     let text: String
     let spans: [FuriganaSpan]
     let tokens: [JapaneseToken]
-    let onSelect: (JapaneseToken) -> Void
+    let expressions: [JapaneseExpression]
+    let onSelect: (DictionarySelection) -> Void
 
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
@@ -288,6 +289,19 @@ struct FuriganaPassageView: UIViewRepresentable {
             )
         }
 
+        for expression in expressions where NSMaxRange(expression.textRange) <= attributedText.length {
+            attributedText.addAttributes(
+                [
+                    .underlineStyle: NSUnderlineStyle([
+                        .single,
+                        .patternDash
+                    ]).rawValue,
+                    .underlineColor: UIColor.systemIndigo
+                ],
+                range: expression.textRange
+            )
+        }
+
         return attributedText
     }
 
@@ -308,14 +322,22 @@ struct FuriganaPassageView: UIViewRepresentable {
             guard let textView = gesture.view as? RubyTextView,
                   let characterIndex = textView.characterIndex(
                     at: gesture.location(in: textView)
-                  ),
-                  let token = parent.interactiveTokens.first(where: {
-                    NSLocationInRange(characterIndex, $0.textRange)
-                  }) else {
+                  ) else {
                 return
             }
 
-            parent.onSelect(token)
+            if let expression = parent.expressions.first(where: {
+                NSLocationInRange(characterIndex, $0.textRange)
+            }) {
+                parent.onSelect(.expression(expression))
+                return
+            }
+
+            if let token = parent.interactiveTokens.first(where: {
+                NSLocationInRange(characterIndex, $0.textRange)
+            }) {
+                parent.onSelect(.token(token))
+            }
         }
     }
 }

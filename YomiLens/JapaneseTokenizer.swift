@@ -19,6 +19,15 @@ struct FuriganaSpan {
     let range: NSRange
 }
 
+struct JapaneseExpression: Identifiable {
+    let id: String
+    let tokenIDs: [Int]
+    let textRange: NSRange
+    let surface: String
+    let dictionaryForm: String?
+    let entry: DictionaryEntry
+}
+
 struct JapaneseTokenization {
     enum Source {
         case mecabIPADic
@@ -36,11 +45,13 @@ struct JapaneseTokenization {
 
     let tokens: [JapaneseToken]
     let furiganaSpans: [FuriganaSpan]
+    let expressions: [JapaneseExpression]
     let source: Source
 
     static let empty = JapaneseTokenization(
         tokens: [],
         furiganaSpans: [],
+        expressions: [],
         source: .mecabIPADic
     )
 }
@@ -124,6 +135,7 @@ enum JapaneseTokenizer {
         return JapaneseTokenization(
             tokens: tokens,
             furiganaSpans: furiganaSpans,
+            expressions: findExpressions(in: tokens),
             source: .mecabIPADic
         )
     }
@@ -189,7 +201,101 @@ enum JapaneseTokenizer {
         return JapaneseTokenization(
             tokens: tokens,
             furiganaSpans: [],
+            expressions: findExpressions(in: tokens),
             source: .appleNaturalLanguageFallback
         )
+    }
+
+    private static func findExpressions(
+        in tokens: [JapaneseToken]
+    ) -> [JapaneseExpression] {
+        let maximumTokenCount = 8
+        let sentences = Dictionary(grouping: tokens, by: \.sentenceGroup)
+            .sorted { $0.key < $1.key }
+            .map { pair in pair.value.sorted { $0.order < $1.order } }
+        var expressions: [JapaneseExpression] = []
+
+        for sentence in sentences {
+            var start = 0
+            while start < sentence.count - 1 {
+                let maximumEnd = min(
+                    sentence.count - 1,
+                    start + maximumTokenCount - 1
+                )
+                var match: JapaneseExpression?
+
+                for end in stride(from: maximumEnd, through: start + 1, by: -1) {
+                    let span = Array(sentence[start...end])
+                    guard !span.contains(where: { $0.partOfSpeech == "symbol" }) else {
+                        continue
+                    }
+
+                    let surface = span.map(\.surface).joined()
+                    let reading = span.map { $0.reading ?? $0.surface }.joined()
+                    for dictionaryForm in expressionDictionaryForms(for: span) {
+                        guard let entry = DictionaryService.lookupExpression(
+                            surface: surface,
+                            reading: reading,
+                            dictionaryForm: dictionaryForm
+                        ) else {
+                            continue
+                        }
+
+                        let firstRange = span[0].textRange
+                        let lastRange = span[span.count - 1].textRange
+                        match = JapaneseExpression(
+                            id: "\(span[0].id)-\(span[span.count - 1].id)-\(entry.id)",
+                            tokenIDs: span.map(\.id),
+                            textRange: NSRange(
+                                location: firstRange.location,
+                                length: NSMaxRange(lastRange) - firstRange.location
+                            ),
+                            surface: surface,
+                            dictionaryForm: dictionaryForm == surface
+                                ? nil
+                                : dictionaryForm,
+                            entry: entry
+                        )
+                        break
+                    }
+
+                    if match != nil { break }
+                }
+
+                if let match {
+                    expressions.append(match)
+                    start += match.tokenIDs.count
+                } else {
+                    start += 1
+                }
+            }
+        }
+
+        return expressions
+    }
+
+    private static func expressionDictionaryForms(
+        for tokens: [JapaneseToken]
+    ) -> [String] {
+        let surface = tokens.map(\.surface).joined()
+        var forms = [surface]
+
+        for index in tokens.indices.reversed() {
+            guard let lemma = tokens[index].dictionaryForm,
+                  tokens[(index + 1)...].allSatisfy({ token in
+                      let partOfSpeech = token.partOfSpeech?.lowercased() ?? ""
+                      return partOfSpeech.contains("auxiliary")
+                          || partOfSpeech == "particle"
+                  }) else {
+                continue
+            }
+
+            let form = tokens[..<index].map(\.surface).joined() + lemma
+            if !forms.contains(form) {
+                forms.append(form)
+            }
+        }
+
+        return forms
     }
 }

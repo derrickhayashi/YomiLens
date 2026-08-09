@@ -21,6 +21,13 @@ JMdict entries using reading, part of speech, frequency, and preferred-form
 signals, and applies JMdict's reading, spelling, and sense restrictions before
 choosing the displayed meanings.
 
+Expression matching scans adjacent tokens inside each sentence, including
+particles, and tries spans up to eight tokens long. It checks both the captured
+surface text and useful phrase lemma forms such as `手に入れた → 手に入れる`,
+then keeps the longest non-overlapping JMdict match. Expressions receive blue
+dashed underlines and their own cards; the original word cards remain available
+for individual lookup.
+
 ## Run on an iPhone
 
 1. Open `YomiLens.xcodeproj` in Xcode.
@@ -86,12 +93,13 @@ release regularly before shipping. See the [official JMdict project](https://www
   the displayed photo.
 - `JapaneseTokenizer.swift` performs deterministic MeCab/IPADic analysis and
   falls back to Apple Natural Language if the dictionary cannot initialize.
-- `TokenListView.swift` displays token-level furigana, surface forms, dictionary
-  forms, and parts of speech, preserves sentence and OCR line breaks, and
-  handles token selection.
+- `TokenListView.swift` displays recognized expressions plus token-level
+  furigana, surface forms, dictionary forms, and parts of speech, preserves
+  sentence and OCR line breaks, and handles phrase or token selection.
 - `FuriganaPassageView.swift` renders the complete passage as natural continuous
   text with Core Text ruby annotations above kanji. Content words have dotted
-  underlines and open the same dictionary sheet when tapped.
+  underlines, while recognized expressions have blue dashed underlines; both
+  open the same dictionary sheet when tapped.
 - `DictionaryService.swift` opens the bundled SQLite database read-only and
   performs ranked, lemma-first JMdict lookup.
 - `DictionaryEntrySheet.swift` shows readings, meanings, and the session-only

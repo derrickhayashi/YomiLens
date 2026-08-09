@@ -25,13 +25,26 @@ struct DictionaryMatchingHarness {
             return value == "-" ? nil : value
         }
 
-        let token = JapaneseToken(
-            surface: CommandLine.arguments[2],
-            reading: optionalArgument(3),
-            dictionaryForm: optionalArgument(4),
-            partOfSpeech: optionalArgument(5)
-        )
-        guard let entry = database.lookup(token) else {
+        let entry: DictionaryEntry?
+        if CommandLine.arguments[5] == "EXPRESSION" {
+            entry = database.lookup(
+                surface: CommandLine.arguments[2],
+                reading: optionalArgument(3),
+                dictionaryForm: optionalArgument(4),
+                partOfSpeech: nil,
+                includeReadingCandidate: false
+            )
+        } else {
+            let token = JapaneseToken(
+                surface: CommandLine.arguments[2],
+                reading: optionalArgument(3),
+                dictionaryForm: optionalArgument(4),
+                partOfSpeech: optionalArgument(5)
+            )
+            entry = database.lookup(token)
+        }
+
+        guard let entry else {
             print("NO_MATCH")
             return
         }
