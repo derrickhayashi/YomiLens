@@ -167,8 +167,10 @@ The app should not assume every token deserves an Anki card.
 
 For the technical preview, tapping a token opens a compact dictionary sheet
 showing its surface form, reading, lemma, part of speech, and a few English
-glosses. The user can mark the entry as useful for the current session. This
-tests the core learning interaction before persistence or Anki export exists.
+glosses. The user can save or remove the entry from My List. Saved words and
+expressions persist across launches together with the encountered form and
+source passage, providing the data needed for later Anki export without turning
+YomiLens into a review system.
 
 The implementation uses a dependency-free, build-time Python pipeline that
 transforms the English-only JMdict Next Generation distribution into a compact,
@@ -754,6 +756,15 @@ Milestone 4B adds deterministic multiword expression recognition:
 - prefer the longest non-overlapping JMdict match;
 - show tappable expression ranges and cards without removing individual words;
 - cover exact and inflected expression lookup in the regression suite.
+
+Milestone 4C finishes vocabulary selection:
+
+- persist complete word and expression records across app launches;
+- retain the encountered form and source passage for later export;
+- provide a real My List with detail reopening and swipe-to-delete;
+- deduplicate repeated saves of the same JMdict headword and reading;
+- keep the word breakdown collapsed until the user requests it;
+- cover save, reload, deduplication, and removal with a regression harness.
 
 Deeper whole-sentence sense ranking remains a later contextual-analysis step.
 

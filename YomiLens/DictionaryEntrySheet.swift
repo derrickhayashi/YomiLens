@@ -3,6 +3,7 @@ import SwiftUI
 enum DictionarySelection: Identifiable {
     case token(JapaneseToken)
     case expression(JapaneseExpression)
+    case saved(SavedVocabularyItem)
 
     var id: String {
         switch self {
@@ -10,15 +11,23 @@ enum DictionarySelection: Identifiable {
             "token-\(token.id)"
         case .expression(let expression):
             "expression-\(expression.id)"
+        case .saved(let item):
+            "saved-\(item.id)"
         }
     }
 }
 
 struct DictionaryEntrySheet: View {
     let selection: DictionarySelection
-    @Binding var learnedEntryIDs: Set<String>
+    let sourceText: String
 
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var vocabularyStore: SavedVocabularyStore
+
+    init(selection: DictionarySelection, sourceText: String = "") {
+        self.selection = selection
+        self.sourceText = sourceText
+    }
 
     private var entry: DictionaryEntry? {
         switch selection {
@@ -26,6 +35,8 @@ struct DictionaryEntrySheet: View {
             DictionaryService.lookup(token)
         case .expression(let expression):
             expression.entry
+        case .saved(let item):
+            item.dictionaryEntry
         }
     }
 
@@ -35,14 +46,14 @@ struct DictionaryEntrySheet: View {
                 VStack(alignment: .leading, spacing: 20) {
                     selectionSummary
 
-                    if !DictionaryService.isAvailable {
+                    if let entry {
+                        entryDetails(entry)
+                    } else if !DictionaryService.isAvailable {
                         ContentUnavailableView(
                             "Dictionary unavailable",
                             systemImage: "externaldrive.badge.exclamationmark",
                             description: Text("Generate the bundled database with `python3 tools/build_jmdict.py`, then rebuild the app.")
                         )
-                    } else if let entry {
-                        entryDetails(entry)
                     } else {
                         ContentUnavailableView(
                             "No JMdict entry found",
@@ -77,6 +88,10 @@ struct DictionaryEntrySheet: View {
             "Word details"
         case .expression:
             "Expression details"
+        case .saved(let item):
+            item.kind == .expression
+                ? "Expression details"
+                : "Word details"
         }
     }
 
@@ -106,6 +121,7 @@ struct DictionaryEntrySheet: View {
         switch selection {
         case .token(let token): token.surface
         case .expression(let expression): expression.surface
+        case .saved(let item): item.surfaceForm
         }
     }
 
@@ -113,6 +129,7 @@ struct DictionaryEntrySheet: View {
         switch selection {
         case .token(let token): entry?.reading ?? token.reading
         case .expression(let expression): expression.entry.reading
+        case .saved(let item): item.reading
         }
     }
 
@@ -120,6 +137,7 @@ struct DictionaryEntrySheet: View {
         switch selection {
         case .token(let token): token.dictionaryForm
         case .expression(let expression): expression.dictionaryForm
+        case .saved(let item): item.dictionaryForm
         }
     }
 
@@ -140,27 +158,90 @@ struct DictionaryEntrySheet: View {
                 Text("\(index + 1). \(meaning)")
             }
 
-            Button {
-                toggleLearned(entry)
-            } label: {
-                Label(
-                    learnedEntryIDs.contains(entry.id) ? "Added to learning list" : "Learn this word",
-                    systemImage: learnedEntryIDs.contains(entry.id) ? "checkmark.circle.fill" : "plus.circle"
-                )
-                .frame(maxWidth: .infinity)
+            if let savedSourceText {
+                Divider()
+                    .padding(.top, 4)
+
+                Text("Source passage")
+                    .font(.headline)
+
+                Text(savedSourceText)
+                    .textSelection(.enabled)
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .tint(learnedEntryIDs.contains(entry.id) ? .green : .blue)
-            .padding(.top, 8)
+
+            if let savedItem {
+                Button {
+                    toggleSaved(savedItem)
+                } label: {
+                    Label(
+                        vocabularyStore.contains(savedItem.id)
+                            ? "Remove from My List"
+                            : "Save to My List",
+                        systemImage: vocabularyStore.contains(savedItem.id)
+                            ? "bookmark.slash.fill"
+                            : "bookmark.fill"
+                    )
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .tint(
+                    vocabularyStore.contains(savedItem.id)
+                        ? .red
+                        : .blue
+                )
+                .padding(.top, 8)
+            }
         }
     }
 
-    private func toggleLearned(_ entry: DictionaryEntry) {
-        if learnedEntryIDs.contains(entry.id) {
-            learnedEntryIDs.remove(entry.id)
+    private var savedItem: SavedVocabularyItem? {
+        guard let entry else { return nil }
+
+        if case .saved(let item) = selection {
+            return item
+        }
+
+        let kind: SavedVocabularyKind
+        switch selection {
+        case .token:
+            kind = .word
+        case .expression:
+            kind = .expression
+        case .saved(let item):
+            return item
+        }
+
+        return SavedVocabularyItem(
+            id: [entry.id, entry.headword, entry.reading]
+                .joined(separator: "|"),
+            dictionaryEntryID: entry.id,
+            kind: kind,
+            primaryForm: primaryForm,
+            headword: entry.headword,
+            surfaceForm: surface,
+            dictionaryForm: dictionaryForm,
+            reading: entry.reading,
+            partOfSpeech: entry.partOfSpeech,
+            meanings: entry.meanings,
+            sourceText: sourceText,
+            savedAt: Date()
+        )
+    }
+
+    private var savedSourceText: String? {
+        guard case .saved(let item) = selection else { return nil }
+        let text = item.sourceText.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+        return text.isEmpty ? nil : text
+    }
+
+    private func toggleSaved(_ item: SavedVocabularyItem) {
+        if vocabularyStore.contains(item.id) {
+            vocabularyStore.remove(item.id)
         } else {
-            learnedEntryIDs.insert(entry.id)
+            vocabularyStore.add(item)
         }
     }
 }

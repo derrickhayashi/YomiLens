@@ -4,7 +4,7 @@ This technical preview captures an image with the iPhone's system camera or
 loads one from the photo library, runs Japanese OCR locally with Apple Vision,
 draws numbered boxes around the recognized regions, shows editable recognized
 text, and displays Japanese token boundaries. Each token can be tapped for a
-dictionary detail sheet and marked as a word to learn.
+dictionary detail sheet and saved to a persistent personal vocabulary list.
 
 Token analysis uses Mecab-Swift 0.8.0 with its bundled IPADic dictionary. It
 provides hiragana readings, dictionary forms, and parts of speech without a
@@ -103,8 +103,11 @@ release regularly before shipping. See the [official JMdict project](https://www
   open the same dictionary sheet when tapped.
 - `DictionaryService.swift` opens the bundled SQLite database read-only and
   performs ranked, lemma-first JMdict lookup.
-- `DictionaryEntrySheet.swift` shows readings, meanings, and the session-only
-  "Learn this word" interaction.
+- `DictionaryEntrySheet.swift` shows readings, meanings, and the persistent
+  save/remove interaction for My List.
+- `SavedVocabularyStore.swift` persists complete saved word and expression
+  records, including source text, as a small versioned JSON payload in app
+  preferences.
 - `SourcesView.swift` displays the bundled JMdict release, attribution, and
   licence link.
 - `tools/build_jmdict.py` downloads and converts the English-only JMdict NG
@@ -112,9 +115,9 @@ release regularly before shipping. See the [official JMdict project](https://www
 - `tools/dictionary_matching_harness.swift` exercises the production Swift
   matcher against generated regression dictionaries.
 
-The preview intentionally has no sentence translation, persistent learning
-list, custom camera, or backend. Vocabulary definitions come from the generated
-JMdict database and remain fully offline at runtime.
+The preview intentionally has no sentence translation, Anki export, capture
+history, custom camera, or backend. Vocabulary definitions and My List remain
+fully offline at runtime.
 
 IPADic is old and will not recognize every proper noun, game-specific term, or
 modern expression. Before distribution, review the licenses of Mecab-Swift,

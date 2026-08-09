@@ -23,6 +23,7 @@
 		10000000000000000000000E /* SourcesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000000D /* SourcesView.swift */; };
 		10000000000000000000000F /* JMdict.sqlite3 in Resources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000000E /* JMdict.sqlite3 */; };
 		100000000000000000000010 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 20000000000000000000000F /* libsqlite3.tbd */; };
+		100000000000000000000011 /* SavedVocabularyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000010 /* SavedVocabularyStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,6 +42,7 @@
 		20000000000000000000000D /* SourcesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourcesView.swift; sourceTree = "<group>"; };
 		20000000000000000000000E /* JMdict.sqlite3 */ = {isa = PBXFileReference; lastKnownFileType = file; path = Resources/JMdict.sqlite3; sourceTree = "<group>"; };
 		20000000000000000000000F /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.text-based-dylib-definition; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
+		200000000000000000000010 /* SavedVocabularyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedVocabularyStore.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -80,6 +82,7 @@
 				20000000000000000000000B /* DictionaryEntrySheet.swift */,
 				20000000000000000000000C /* FuriganaPassageView.swift */,
 				20000000000000000000000D /* SourcesView.swift */,
+				200000000000000000000010 /* SavedVocabularyStore.swift */,
 				20000000000000000000000E /* JMdict.sqlite3 */,
 			);
 			path = YomiLens;
@@ -181,6 +184,7 @@
 				10000000000000000000000C /* DictionaryEntrySheet.swift in Sources */,
 				10000000000000000000000D /* FuriganaPassageView.swift in Sources */,
 				10000000000000000000000E /* SourcesView.swift in Sources */,
+				100000000000000000000011 /* SavedVocabularyStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

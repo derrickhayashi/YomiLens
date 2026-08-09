@@ -4,6 +4,7 @@ import UIKit
 
 struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
+    @EnvironmentObject private var vocabularyStore: SavedVocabularyStore
 
     @State private var isShowingCamera = false
     @State private var isShowingPhotoLibrary = false
@@ -14,10 +15,10 @@ struct ContentView: View {
     @State private var recognizedText = ""
     @State private var tokenization = JapaneseTokenization.empty
     @State private var dictionarySelection: DictionarySelection?
-    @State private var learnedEntryIDs: Set<String> = []
     @State private var errorMessage: String?
     @State private var isShowingMyList = false
     @State private var isShowingAbout = false
+    @State private var isWordBreakdownExpanded = false
     @State private var passageRenderGeneration = 0
 
     var body: some View {
@@ -82,27 +83,32 @@ struct ContentView: View {
                             Divider()
                                 .padding(.vertical, 4)
 
-                            Text("Word breakdown")
-                                .font(.headline)
+                            DisclosureGroup(
+                                isExpanded: $isWordBreakdownExpanded
+                            ) {
+                                TokenListView(
+                                    tokens: tokenization.tokens,
+                                    expressions: tokenization.expressions
+                                ) { selection in
+                                    dictionarySelection = selection
+                                }
 
-                            TokenListView(
-                                tokens: tokenization.tokens,
-                                expressions: tokenization.expressions
-                            ) { selection in
-                                dictionarySelection = selection
+                                Text("\(tokenization.source.label). Blue dashed underlines mark recognized expressions; dotted underlines mark individual words. Particles and punctuation are omitted from the word cards.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .padding(.top, 4)
+                            } label: {
+                                Text("Word breakdown")
+                                    .font(.headline)
                             }
 
-                            Text("\(tokenization.source.label). Blue dashed underlines mark recognized expressions; dotted underlines mark individual words. Particles and punctuation are omitted from the word cards.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-
-                            if !learnedEntryIDs.isEmpty {
+                            if !vocabularyStore.items.isEmpty {
                                 Label(
-                                    "\(learnedEntryIDs.count) word\(learnedEntryIDs.count == 1 ? "" : "s") selected to learn",
-                                    systemImage: "checkmark.circle.fill"
+                                    "\(vocabularyStore.items.count) item\(vocabularyStore.items.count == 1 ? "" : "s") saved in My List",
+                                    systemImage: "bookmark.fill"
                                 )
                                 .font(.caption)
-                                .foregroundStyle(.green)
+                                .foregroundStyle(.blue)
                             }
 
                             if case .appleNaturalLanguageFallback = tokenization.source {
@@ -131,11 +137,11 @@ struct ContentView: View {
             .sheet(item: $dictionarySelection) { selection in
                 DictionaryEntrySheet(
                     selection: selection,
-                    learnedEntryIDs: $learnedEntryIDs
+                    sourceText: recognizedText
                 )
             }
             .sheet(isPresented: $isShowingMyList) {
-                MyListView(selectedWordCount: learnedEntryIDs.count)
+                MyListView()
             }
             .sheet(isPresented: $isShowingAbout) {
                 SourcesView()
@@ -285,6 +291,7 @@ struct ContentView: View {
         recognizedRegions = []
         recognizedText = ""
         tokenization = .empty
+        isWordBreakdownExpanded = false
         isRecognizing = true
         errorMessage = nil
 
@@ -307,21 +314,43 @@ struct ContentView: View {
 }
 
 private struct MyListView: View {
-    let selectedWordCount: Int
-
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var vocabularyStore: SavedVocabularyStore
+    @State private var selectedItem: SavedVocabularyItem?
 
     var body: some View {
         NavigationStack {
-            ContentUnavailableView {
-                Label("My List", systemImage: "bookmark")
-            } description: {
-                Text("Saved vocabulary will appear here when persistent word lists are added.")
-            } actions: {
-                if selectedWordCount > 0 {
-                    Text("\(selectedWordCount) selected in this session")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+            Group {
+                if vocabularyStore.items.isEmpty {
+                    ContentUnavailableView {
+                        Label("No Saved Vocabulary", systemImage: "bookmark")
+                    } description: {
+                        Text("Tap an underlined word or expression, then save it to My List.")
+                    }
+                } else {
+                    List {
+                        ForEach(vocabularyStore.items) { item in
+                            Button {
+                                selectedItem = item
+                            } label: {
+                                savedVocabularyRow(item)
+                            }
+                            .buttonStyle(.plain)
+                            .swipeActions {
+                                Button("Delete", role: .destructive) {
+                                    vocabularyStore.remove(item.id)
+                                }
+                            }
+                        }
+                        .onDelete { offsets in
+                            let itemIDs = offsets.map {
+                                vocabularyStore.items[$0].id
+                            }
+                            for itemID in itemIDs {
+                                vocabularyStore.remove(itemID)
+                            }
+                        }
+                    }
                 }
             }
             .navigationTitle("My List")
@@ -333,6 +362,46 @@ private struct MyListView: View {
                     }
                 }
             }
+            .sheet(item: $selectedItem) { item in
+                DictionaryEntrySheet(selection: .saved(item))
+            }
         }
+    }
+
+    private func savedVocabularyRow(
+        _ item: SavedVocabularyItem
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(item.primaryForm)
+                    .font(.headline)
+
+                Spacer()
+
+                Text(item.kind.label)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+
+            Text(item.reading)
+                .font(.subheadline)
+                .foregroundStyle(.blue)
+
+            if let meaning = item.meanings.first {
+                Text(meaning)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+
+            if !item.sourceText.isEmpty {
+                Text(item.sourceText)
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+            }
+        }
+        .padding(.vertical, 3)
+        .contentShape(Rectangle())
     }
 }
