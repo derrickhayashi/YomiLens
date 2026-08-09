@@ -1,10 +1,10 @@
 # YomiLens
 
-This technical preview opens the iPhone's system camera, captures one photo,
-runs Japanese OCR locally with Apple Vision, draws numbered boxes around the
-recognized regions, shows editable recognized text, and displays Apple Natural
-Language's Japanese token boundaries. Each token can be tapped for a dictionary
-detail sheet and marked as a word to learn.
+This technical preview captures an image with the iPhone's system camera or
+loads one from the photo library, runs Japanese OCR locally with Apple Vision,
+draws numbered boxes around the recognized regions, shows editable recognized
+text, and displays Japanese token boundaries. Each token can be tapped for a
+dictionary detail sheet and marked as a word to learn.
 
 Token analysis uses Mecab-Swift 0.8.0 with its bundled IPADic dictionary. It
 provides hiragana readings, dictionary forms, and parts of speech without a
@@ -42,9 +42,10 @@ for individual lookup.
 After the iPhone has been paired with Xcode, enable wireless device connection
 if you do not want to keep it connected by cable.
 
-The simulator can build and display the initial screen, but the scan button
-reports that no camera is available. Use a physical iPhone to evaluate OCR
-against a television.
+Tapping **Scan Text** opens the camera immediately. Long-press it to choose an
+image from the photo library instead. Because the simulator has no camera, a
+normal tap there falls back to the photo library automatically. Use a physical
+iPhone to evaluate direct capture against a television.
 
 ## Build the JMdict database
 

@@ -1,3 +1,4 @@
+import PhotosUI
 import SwiftUI
 import UIKit
 
@@ -5,6 +6,8 @@ struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     @State private var isShowingCamera = false
+    @State private var isShowingPhotoLibrary = false
+    @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var isRecognizing = false
     @State private var capturedImage: UIImage?
     @State private var recognizedRegions: [OCRRegion] = []
@@ -151,6 +154,20 @@ struct ContentView: View {
                 )
                 .ignoresSafeArea()
             }
+            .photosPicker(
+                isPresented: $isShowingPhotoLibrary,
+                selection: $selectedPhotoItem,
+                matching: .images,
+                preferredItemEncoding: .automatic
+            )
+            .onChange(of: selectedPhotoItem) { _, item in
+                guard let item else { return }
+
+                Task {
+                    await loadPhoto(item)
+                    selectedPhotoItem = nil
+                }
+            }
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 bottomMenuBar
             }
@@ -187,6 +204,12 @@ struct ContentView: View {
             .buttonStyle(.plain)
             .disabled(isRecognizing)
             .opacity(isRecognizing ? 0.5 : 1)
+            .contextMenu {
+                Button("Choose from Library", systemImage: "photo.on.rectangle") {
+                    errorMessage = nil
+                    isShowingPhotoLibrary = true
+                }
+            }
 
             Spacer(minLength: 12)
 
@@ -229,11 +252,31 @@ struct ContentView: View {
         errorMessage = nil
 
         guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
-            errorMessage = "A camera is not available. Run this preview on a physical iPhone."
+            isShowingPhotoLibrary = true
             return
         }
 
         isShowingCamera = true
+    }
+
+    @MainActor
+    private func loadPhoto(_ item: PhotosPickerItem) async {
+        isRecognizing = true
+        errorMessage = nil
+
+        do {
+            guard let data = try await item.loadTransferable(type: Data.self),
+                  let image = UIImage(data: data) else {
+                errorMessage = "The selected photo could not be loaded."
+                isRecognizing = false
+                return
+            }
+
+            await recognizeText(in: image)
+        } catch {
+            isRecognizing = false
+            errorMessage = "Loading the photo failed: \(error.localizedDescription)"
+        }
     }
 
     @MainActor
