@@ -16,6 +16,7 @@ class SavedVocabularyTests(unittest.TestCase):
                     "xcrun",
                     "swiftc",
                     str(repository / "YomiLens/SavedVocabularyStore.swift"),
+                    str(repository / "YomiLens/AnkiExportService.swift"),
                     str(repository / "tools/saved_vocabulary_harness.swift"),
                     "-module-cache-path",
                     str(root / "swift-module-cache"),

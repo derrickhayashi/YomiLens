@@ -3,7 +3,7 @@ import IPADic
 import Mecab_Swift
 import NaturalLanguage
 
-struct JapaneseToken: Identifiable {
+struct JapaneseToken: Hashable, Identifiable, Sendable {
     let id: Int
     let order: Int
     let sentenceGroup: Int
@@ -14,12 +14,12 @@ struct JapaneseToken: Identifiable {
     let partOfSpeech: String?
 }
 
-struct FuriganaSpan {
+struct FuriganaSpan: Sendable {
     let reading: String
     let range: NSRange
 }
 
-struct JapaneseExpression: Identifiable {
+struct JapaneseExpression: Hashable, Identifiable, Sendable {
     let id: String
     let tokenIDs: [Int]
     let textRange: NSRange
@@ -28,8 +28,8 @@ struct JapaneseExpression: Identifiable {
     let entry: DictionaryEntry
 }
 
-struct JapaneseTokenization {
-    enum Source {
+struct JapaneseTokenization: Sendable {
+    enum Source: Sendable {
         case mecabIPADic
         case appleNaturalLanguageFallback
 
@@ -56,7 +56,6 @@ struct JapaneseTokenization {
     )
 }
 
-@MainActor
 enum JapaneseTokenizer {
     private static let mecabTokenizer = try? Tokenizer(dictionary: IPADic())
 

@@ -1,7 +1,7 @@
 import Foundation
 import SQLite3
 
-struct DictionaryEntry: Identifiable, Hashable {
+struct DictionaryEntry: Hashable, Identifiable, Sendable {
     let id: String
     let headword: String
     let reading: String
@@ -9,7 +9,6 @@ struct DictionaryEntry: Identifiable, Hashable {
     let meanings: [String]
 }
 
-@MainActor
 enum DictionaryService {
     private static let database = DictionaryDatabase()
 

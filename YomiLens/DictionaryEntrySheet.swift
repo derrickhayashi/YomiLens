@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum DictionarySelection: Identifiable {
+enum DictionarySelection: Hashable, Identifiable {
     case token(JapaneseToken)
     case expression(JapaneseExpression)
     case saved(SavedVocabularyItem)
@@ -17,12 +17,14 @@ enum DictionarySelection: Identifiable {
     }
 }
 
-struct DictionaryEntrySheet: View {
+struct DictionaryEntryView: View {
     let selection: DictionarySelection
     let sourceText: String
 
-    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var vocabularyStore: SavedVocabularyStore
+    @State private var isShowingAnkiExport = false
+    @State private var resolvedTokenEntry: DictionaryEntry?
+    @State private var isLoadingEntry = false
 
     init(selection: DictionarySelection, sourceText: String = "") {
         self.selection = selection
@@ -31,8 +33,8 @@ struct DictionaryEntrySheet: View {
 
     private var entry: DictionaryEntry? {
         switch selection {
-        case .token(let token):
-            DictionaryService.lookup(token)
+        case .token:
+            resolvedTokenEntry
         case .expression(let expression):
             expression.entry
         case .saved(let item):
@@ -41,45 +43,46 @@ struct DictionaryEntrySheet: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    selectionSummary
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                selectionSummary
 
-                    if let entry {
-                        entryDetails(entry)
-                    } else if !DictionaryService.isAvailable {
-                        ContentUnavailableView(
-                            "Dictionary unavailable",
-                            systemImage: "externaldrive.badge.exclamationmark",
-                            description: Text("Generate the bundled database with `python3 tools/build_jmdict.py`, then rebuild the app.")
-                        )
-                    } else {
-                        ContentUnavailableView(
-                            "No JMdict entry found",
-                            systemImage: "books.vertical",
-                            description: Text("The tokenizer found this word, but the bundled JMdict release has no matching written form, reading, or lemma.")
-                        )
-                    }
-
-                    Text(DictionaryService.sourceDescription.map { "Offline dictionary: \($0)." } ?? "The offline JMdict database is not bundled in this build.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                if isLoadingEntry {
+                    ProgressView("Looking up word…")
+                        .frame(maxWidth: .infinity, alignment: .center)
+                } else if let entry {
+                    entryDetails(entry)
+                } else if !DictionaryService.isAvailable {
+                    ContentUnavailableView(
+                        "Dictionary unavailable",
+                        systemImage: "externaldrive.badge.exclamationmark",
+                        description: Text("Generate the bundled database with `python3 tools/build_jmdict.py`, then rebuild the app.")
+                    )
+                } else {
+                    ContentUnavailableView(
+                        "No JMdict entry found",
+                        systemImage: "books.vertical",
+                        description: Text("The tokenizer found this word, but the bundled JMdict release has no matching written form, reading, or lemma.")
+                    )
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding()
+
+                Text(DictionaryService.sourceDescription.map { "Offline dictionary: \($0)." } ?? "The offline JMdict database is not bundled in this build.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-            .navigationTitle(navigationTitle)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+        }
+        .navigationTitle(navigationTitle)
+        .navigationBarTitleDisplayMode(.inline)
+        .task(id: selection.id) {
+            await loadTokenEntryIfNeeded()
+        }
+        .sheet(isPresented: $isShowingAnkiExport) {
+            if case .saved(let item) = selection {
+                AnkiExportView(item: item)
             }
         }
-        .presentationDetents([.medium, .large])
     }
 
     private var navigationTitle: String {
@@ -162,8 +165,21 @@ struct DictionaryEntrySheet: View {
                 Divider()
                     .padding(.top, 4)
 
+                if case .saved(let item) = selection {
+                    Text("Example")
+                        .font(.headline)
+
+                    Text(
+                        AnkiExportService.attributedSentenceExample(
+                            for: item
+                        )
+                    )
+                    .textSelection(.enabled)
+                }
+
                 Text("Source passage")
                     .font(.headline)
+                    .padding(.top, 4)
 
                 Text(savedSourceText)
                     .textSelection(.enabled)
@@ -191,6 +207,20 @@ struct DictionaryEntrySheet: View {
                         : .blue
                 )
                 .padding(.top, 8)
+            }
+
+            if case .saved = selection {
+                Button {
+                    isShowingAnkiExport = true
+                } label: {
+                    Label(
+                        "Add to Anki",
+                        systemImage: "rectangle.stack.badge.plus"
+                    )
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
             }
         }
     }
@@ -225,8 +255,23 @@ struct DictionaryEntrySheet: View {
             partOfSpeech: entry.partOfSpeech,
             meanings: entry.meanings,
             sourceText: sourceText,
+            sourceLocation: selectionTextRange?.location,
+            sourceLength: selectionTextRange?.length,
             savedAt: Date()
         )
+    }
+
+    private var selectionTextRange: NSRange? {
+        switch selection {
+        case .token(let token):
+            return token.textRange
+        case .expression(let expression):
+            return expression.textRange
+        case .saved(let item):
+            guard let location = item.sourceLocation,
+                  let length = item.sourceLength else { return nil }
+            return NSRange(location: location, length: length)
+        }
     }
 
     private var savedSourceText: String? {
@@ -243,5 +288,15 @@ struct DictionaryEntrySheet: View {
         } else {
             vocabularyStore.add(item)
         }
+    }
+
+    @MainActor
+    private func loadTokenEntryIfNeeded() async {
+        guard case .token(let token) = selection else { return }
+        isLoadingEntry = true
+        let entry = await JapaneseAnalysisService.shared.lookup(token)
+        guard !Task.isCancelled else { return }
+        resolvedTokenEntry = entry
+        isLoadingEntry = false
     }
 }

@@ -24,6 +24,11 @@
 		10000000000000000000000F /* JMdict.sqlite3 in Resources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000000E /* JMdict.sqlite3 */; };
 		100000000000000000000010 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 20000000000000000000000F /* libsqlite3.tbd */; };
 		100000000000000000000011 /* SavedVocabularyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000010 /* SavedVocabularyStore.swift */; };
+		100000000000000000000012 /* AnkiExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000011 /* AnkiExportService.swift */; };
+		100000000000000000000013 /* AnkiExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000012 /* AnkiExportView.swift */; };
+		100000000000000000000014 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000013 /* SettingsView.swift */; };
+		100000000000000000000015 /* JapaneseAnalysisService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000014 /* JapaneseAnalysisService.swift */; };
+		100000000000000000000016 /* DebouncedAnalysisScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000015 /* DebouncedAnalysisScheduler.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -43,6 +48,11 @@
 		20000000000000000000000E /* JMdict.sqlite3 */ = {isa = PBXFileReference; lastKnownFileType = file; path = Resources/JMdict.sqlite3; sourceTree = "<group>"; };
 		20000000000000000000000F /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.text-based-dylib-definition; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
 		200000000000000000000010 /* SavedVocabularyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedVocabularyStore.swift; sourceTree = "<group>"; };
+		200000000000000000000011 /* AnkiExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnkiExportService.swift; sourceTree = "<group>"; };
+		200000000000000000000012 /* AnkiExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnkiExportView.swift; sourceTree = "<group>"; };
+		200000000000000000000013 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		200000000000000000000014 /* JapaneseAnalysisService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JapaneseAnalysisService.swift; sourceTree = "<group>"; };
+		200000000000000000000015 /* DebouncedAnalysisScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebouncedAnalysisScheduler.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -83,6 +93,11 @@
 				20000000000000000000000C /* FuriganaPassageView.swift */,
 				20000000000000000000000D /* SourcesView.swift */,
 				200000000000000000000010 /* SavedVocabularyStore.swift */,
+				200000000000000000000011 /* AnkiExportService.swift */,
+				200000000000000000000012 /* AnkiExportView.swift */,
+				200000000000000000000013 /* SettingsView.swift */,
+				200000000000000000000014 /* JapaneseAnalysisService.swift */,
+				200000000000000000000015 /* DebouncedAnalysisScheduler.swift */,
 				20000000000000000000000E /* JMdict.sqlite3 */,
 			);
 			path = YomiLens;
@@ -185,6 +200,11 @@
 				10000000000000000000000D /* FuriganaPassageView.swift in Sources */,
 				10000000000000000000000E /* SourcesView.swift in Sources */,
 				100000000000000000000011 /* SavedVocabularyStore.swift in Sources */,
+				100000000000000000000012 /* AnkiExportService.swift in Sources */,
+				100000000000000000000013 /* AnkiExportView.swift in Sources */,
+				100000000000000000000014 /* SettingsView.swift in Sources */,
+				100000000000000000000015 /* JapaneseAnalysisService.swift in Sources */,
+				100000000000000000000016 /* DebouncedAnalysisScheduler.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -25,7 +25,41 @@ struct SavedVocabularyItem: Codable, Hashable, Identifiable {
     let partOfSpeech: String
     let meanings: [String]
     let sourceText: String
+    let sourceLocation: Int?
+    let sourceLength: Int?
     let savedAt: Date
+
+    init(
+        id: String,
+        dictionaryEntryID: String,
+        kind: SavedVocabularyKind,
+        primaryForm: String,
+        headword: String,
+        surfaceForm: String,
+        dictionaryForm: String?,
+        reading: String,
+        partOfSpeech: String,
+        meanings: [String],
+        sourceText: String,
+        sourceLocation: Int? = nil,
+        sourceLength: Int? = nil,
+        savedAt: Date
+    ) {
+        self.id = id
+        self.dictionaryEntryID = dictionaryEntryID
+        self.kind = kind
+        self.primaryForm = primaryForm
+        self.headword = headword
+        self.surfaceForm = surfaceForm
+        self.dictionaryForm = dictionaryForm
+        self.reading = reading
+        self.partOfSpeech = partOfSpeech
+        self.meanings = meanings
+        self.sourceText = sourceText
+        self.sourceLocation = sourceLocation
+        self.sourceLength = sourceLength
+        self.savedAt = savedAt
+    }
 
     var dictionaryEntry: DictionaryEntry {
         DictionaryEntry(

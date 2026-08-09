@@ -2,11 +2,18 @@ import PhotosUI
 import SwiftUI
 import UIKit
 
+private enum AppPage: Hashable {
+    case myList
+    case settings
+    case dictionaryDetails(DictionarySelection, sourceText: String)
+}
+
 struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject private var vocabularyStore: SavedVocabularyStore
 
     @State private var isShowingCamera = false
+    @State private var pendingCameraImage: UIImage?
     @State private var isShowingPhotoLibrary = false
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var isRecognizing = false
@@ -14,15 +21,15 @@ struct ContentView: View {
     @State private var recognizedRegions: [OCRRegion] = []
     @State private var recognizedText = ""
     @State private var tokenization = JapaneseTokenization.empty
-    @State private var dictionarySelection: DictionarySelection?
+    @State private var analysisScheduler =
+        DebouncedAnalysisScheduler<JapaneseTokenization>()
     @State private var errorMessage: String?
-    @State private var isShowingMyList = false
-    @State private var isShowingAbout = false
+    @State private var navigationPath: [AppPage] = []
     @State private var isWordBreakdownExpanded = false
     @State private var passageRenderGeneration = 0
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             ScrollView {
                 VStack(spacing: 20) {
                     if isRecognizing {
@@ -72,7 +79,7 @@ struct ContentView: View {
                                 tokens: tokenization.tokens,
                                 expressions: tokenization.expressions
                             ) { selection in
-                                dictionarySelection = selection
+                                showDictionaryDetails(selection)
                             }
                             .id(passageRenderGeneration)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -90,7 +97,7 @@ struct ContentView: View {
                                     tokens: tokenization.tokens,
                                     expressions: tokenization.expressions
                                 ) { selection in
-                                    dictionarySelection = selection
+                                    showDictionaryDetails(selection)
                                 }
 
                                 Text("\(tokenization.source.label). Blue dashed underlines mark recognized expressions; dotted underlines mark individual words. Particles and punctuation are omitted from the word cards.")
@@ -125,7 +132,7 @@ struct ContentView: View {
             }
             .navigationTitle("YomiLens")
             .onChange(of: recognizedText) { _, newText in
-                tokenization = JapaneseTokenizer.tokenize(newText)
+                scheduleAnalysis(for: newText)
             }
             .onChange(of: scenePhase) { _, newPhase in
                 guard newPhase == .active else { return }
@@ -134,25 +141,14 @@ struct ContentView: View {
                 // SwiftUI measures it from the same fresh layout it draws.
                 passageRenderGeneration += 1
             }
-            .sheet(item: $dictionarySelection) { selection in
-                DictionaryEntrySheet(
-                    selection: selection,
-                    sourceText: recognizedText
-                )
-            }
-            .sheet(isPresented: $isShowingMyList) {
-                MyListView()
-            }
-            .sheet(isPresented: $isShowingAbout) {
-                SourcesView()
-            }
-            .fullScreenCover(isPresented: $isShowingCamera) {
+            .fullScreenCover(
+                isPresented: $isShowingCamera,
+                onDismiss: processPendingCameraImage
+            ) {
                 CameraPicker(
                     onImagePicked: { image in
+                        pendingCameraImage = image
                         isShowingCamera = false
-                        Task {
-                            await recognizeText(in: image)
-                        }
                     },
                     onCancel: {
                         isShowingCamera = false
@@ -174,6 +170,35 @@ struct ContentView: View {
                     selectedPhotoItem = nil
                 }
             }
+            .navigationDestination(for: AppPage.self) { page in
+                switch page {
+                case .myList:
+                    MyListView { item in
+                        navigationPath.append(
+                            .dictionaryDetails(
+                                .saved(item),
+                                sourceText: item.sourceText
+                            )
+                        )
+                    }
+                        .safeAreaInset(edge: .bottom, spacing: 0) {
+                            bottomMenuBar
+                        }
+                case .settings:
+                    SettingsView()
+                        .safeAreaInset(edge: .bottom, spacing: 0) {
+                            bottomMenuBar
+                        }
+                case .dictionaryDetails(let selection, let sourceText):
+                    DictionaryEntryView(
+                        selection: selection,
+                        sourceText: sourceText
+                    )
+                    .safeAreaInset(edge: .bottom, spacing: 0) {
+                        bottomMenuBar
+                    }
+                }
+            }
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 bottomMenuBar
             }
@@ -181,15 +206,13 @@ struct ContentView: View {
     }
 
     private var bottomMenuBar: some View {
-        HStack(alignment: .bottom) {
+        HStack(alignment: .bottom, spacing: 4) {
             menuButton(
                 title: "My List",
                 systemImage: "bookmark"
             ) {
-                isShowingMyList = true
+                navigationPath = [.myList]
             }
-
-            Spacer(minLength: 12)
 
             Button {
                 openCamera()
@@ -205,7 +228,7 @@ struct ContentView: View {
                         .font(.caption)
                         .fontWeight(.semibold)
                 }
-                .frame(width: 96)
+                .frame(maxWidth: .infinity)
             }
             .buttonStyle(.plain)
             .disabled(isRecognizing)
@@ -217,16 +240,16 @@ struct ContentView: View {
                 }
             }
 
-            Spacer(minLength: 12)
 
             menuButton(
-                title: "About",
-                systemImage: "info.circle"
+                title: "Settings",
+                systemImage: "gearshape"
             ) {
-                isShowingAbout = true
+                navigationPath = [.settings]
             }
+
         }
-        .padding(.horizontal, 24)
+        .padding(.horizontal, 12)
         .padding(.top, 8)
         .padding(.bottom, 4)
         .background(.bar)
@@ -248,7 +271,8 @@ struct ContentView: View {
                 Text(title)
                     .font(.caption)
             }
-            .frame(width: 88, height: 52)
+            .frame(maxWidth: .infinity)
+            .frame(height: 52)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -256,6 +280,7 @@ struct ContentView: View {
 
     private func openCamera() {
         errorMessage = nil
+        pendingCameraImage = nil
 
         guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
             isShowingPhotoLibrary = true
@@ -263,6 +288,50 @@ struct ContentView: View {
         }
 
         isShowingCamera = true
+    }
+
+    private func processPendingCameraImage() {
+        guard let image = pendingCameraImage else { return }
+        pendingCameraImage = nil
+
+        Task {
+            await recognizeText(in: image)
+        }
+    }
+
+    private func showDictionaryDetails(
+        _ selection: DictionarySelection
+    ) {
+        navigationPath.append(
+            .dictionaryDetails(
+                selection,
+                sourceText: recognizedText
+            )
+        )
+    }
+
+    private func scheduleAnalysis(for text: String) {
+        guard !text.isEmpty else {
+            analysisScheduler.cancel()
+            tokenization = .empty
+            return
+        }
+
+        // Do not leave tappable ranges from the previous text on screen while
+        // the user is editing and the next analysis is being debounced.
+        tokenization = .empty
+
+        analysisScheduler.schedule(
+            text: text,
+            delayNanoseconds: 300_000_000,
+            analyze: { text in
+                await JapaneseAnalysisService.shared.analyze(text)
+            },
+            receive: { analyzedText, result in
+                guard recognizedText == analyzedText else { return }
+                tokenization = result
+            }
+        )
     }
 
     @MainActor
@@ -275,6 +344,7 @@ struct ContentView: View {
                   let image = UIImage(data: data) else {
                 errorMessage = "The selected photo could not be loaded."
                 isRecognizing = false
+                navigationPath = []
                 return
             }
 
@@ -282,6 +352,7 @@ struct ContentView: View {
         } catch {
             isRecognizing = false
             errorMessage = "Loading the photo failed: \(error.localizedDescription)"
+            navigationPath = []
         }
     }
 
@@ -297,6 +368,9 @@ struct ContentView: View {
 
         defer {
             isRecognizing = false
+            // Return after the picker has dismissed and OCR has completed.
+            // Popping while presenting the camera can be ignored by SwiftUI.
+            navigationPath = []
         }
 
         do {
@@ -314,58 +388,45 @@ struct ContentView: View {
 }
 
 private struct MyListView: View {
-    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var vocabularyStore: SavedVocabularyStore
-    @State private var selectedItem: SavedVocabularyItem?
+    let onSelect: (SavedVocabularyItem) -> Void
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if vocabularyStore.items.isEmpty {
-                    ContentUnavailableView {
-                        Label("No Saved Vocabulary", systemImage: "bookmark")
-                    } description: {
-                        Text("Tap an underlined word or expression, then save it to My List.")
-                    }
-                } else {
-                    List {
-                        ForEach(vocabularyStore.items) { item in
-                            Button {
-                                selectedItem = item
-                            } label: {
-                                savedVocabularyRow(item)
-                            }
-                            .buttonStyle(.plain)
-                            .swipeActions {
-                                Button("Delete", role: .destructive) {
-                                    vocabularyStore.remove(item.id)
-                                }
-                            }
+        Group {
+            if vocabularyStore.items.isEmpty {
+                ContentUnavailableView {
+                    Label("No Saved Vocabulary", systemImage: "bookmark")
+                } description: {
+                    Text("Tap an underlined word or expression, then save it to My List.")
+                }
+            } else {
+                List {
+                    ForEach(vocabularyStore.items) { item in
+                        Button {
+                            onSelect(item)
+                        } label: {
+                            savedVocabularyRow(item)
                         }
-                        .onDelete { offsets in
-                            let itemIDs = offsets.map {
-                                vocabularyStore.items[$0].id
-                            }
-                            for itemID in itemIDs {
-                                vocabularyStore.remove(itemID)
+                        .buttonStyle(.plain)
+                        .swipeActions {
+                            Button("Delete", role: .destructive) {
+                                vocabularyStore.remove(item.id)
                             }
                         }
                     }
-                }
-            }
-            .navigationTitle("My List")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
-                        dismiss()
+                    .onDelete { offsets in
+                        let itemIDs = offsets.map {
+                            vocabularyStore.items[$0].id
+                        }
+                        for itemID in itemIDs {
+                            vocabularyStore.remove(itemID)
+                        }
                     }
                 }
-            }
-            .sheet(item: $selectedItem) { item in
-                DictionaryEntrySheet(selection: .saved(item))
             }
         }
+        .navigationTitle("My List")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     private func savedVocabularyRow(

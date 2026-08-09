@@ -469,6 +469,12 @@ Initial analysis pipeline:
          ↓
     structured result
 
+MeCab tokenization and JMdict expression lookup run through a serial analysis
+actor rather than on the main UI actor. Changes to editable OCR text are
+debounced for 300 milliseconds. Cancelling a pending edit prevents its work
+from starting, and results are applied only when they still match the current
+text so an older analysis cannot overwrite a newer one.
+
 Potential technologies:
 
 - Mecab-Swift with bundled IPADic for initial tokenization, readings,
