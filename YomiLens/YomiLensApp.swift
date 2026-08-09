@@ -8,6 +8,9 @@ struct YomiLensApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(vocabularyStore)
+                .task {
+                    await vocabularyStore.load()
+                }
         }
     }
 }

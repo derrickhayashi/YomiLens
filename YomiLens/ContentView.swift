@@ -223,6 +223,23 @@ struct ContentView: View {
             }
             }
         }
+        .alert(
+            "Vocabulary Storage Error",
+            isPresented: Binding(
+                get: { vocabularyStore.errorMessage != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        vocabularyStore.clearError()
+                    }
+                }
+            )
+        ) {
+            Button("OK") {
+                vocabularyStore.clearError()
+            }
+        } message: {
+            Text(vocabularyStore.errorMessage ?? "Saved vocabulary could not be accessed.")
+        }
     }
 
     private var bottomMenuBar: some View {
@@ -415,13 +432,34 @@ private struct MyListView: View {
 
     var body: some View {
         Group {
-            if vocabularyStore.items.isEmpty {
+            switch vocabularyStore.state {
+            case .loading:
+                ProgressView("Loading saved vocabulary…")
+
+            case .failed(let message):
+                ContentUnavailableView {
+                    Label(
+                        "Saved Vocabulary Unavailable",
+                        systemImage: "externaldrive.badge.exclamationmark"
+                    )
+                } description: {
+                    Text(message)
+                } actions: {
+                    Button("Retry") {
+                        Task {
+                            await vocabularyStore.load()
+                        }
+                    }
+                }
+
+            case .ready where vocabularyStore.items.isEmpty:
                 ContentUnavailableView {
                     Label("No Saved Vocabulary", systemImage: "bookmark")
                 } description: {
                     Text("Tap an underlined word or expression, then save it to My List.")
                 }
-            } else {
+
+            case .ready:
                 List {
                     ForEach(vocabularyStore.items) { item in
                         Button {
@@ -432,7 +470,9 @@ private struct MyListView: View {
                         .buttonStyle(.plain)
                         .swipeActions {
                             Button("Delete", role: .destructive) {
-                                vocabularyStore.remove(item.id)
+                                Task {
+                                    await vocabularyStore.remove(item.id)
+                                }
                             }
                         }
                     }
@@ -440,8 +480,8 @@ private struct MyListView: View {
                         let itemIDs = offsets.map {
                             vocabularyStore.items[$0].id
                         }
-                        for itemID in itemIDs {
-                            vocabularyStore.remove(itemID)
+                        Task {
+                            await vocabularyStore.remove(Set(itemIDs))
                         }
                     }
                 }

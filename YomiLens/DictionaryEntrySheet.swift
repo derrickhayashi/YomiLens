@@ -201,6 +201,7 @@ struct DictionaryEntryView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
+                .disabled(!vocabularyStore.isReady)
                 .tint(
                     vocabularyStore.contains(savedItem.id)
                         ? .red
@@ -283,10 +284,12 @@ struct DictionaryEntryView: View {
     }
 
     private func toggleSaved(_ item: SavedVocabularyItem) {
-        if vocabularyStore.contains(item.id) {
-            vocabularyStore.remove(item.id)
-        } else {
-            vocabularyStore.add(item)
+        Task {
+            if vocabularyStore.contains(item.id) {
+                await vocabularyStore.remove(item.id)
+            } else {
+                await vocabularyStore.add(item)
+            }
         }
     }
 

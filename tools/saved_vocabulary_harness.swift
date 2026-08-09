@@ -11,13 +11,20 @@ struct DictionaryEntry {
 @main
 struct SavedVocabularyHarness {
     @MainActor
-    static func main() {
+    static func main() async throws {
         let suiteName = "YomiLensSavedVocabularyTests-\(UUID().uuidString)"
         guard let defaults = UserDefaults(suiteName: suiteName) else {
             exit(2)
         }
+        let temporaryDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(suiteName, isDirectory: true)
+        try FileManager.default.createDirectory(
+            at: temporaryDirectory,
+            withIntermediateDirectories: true
+        )
         defer {
             defaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: temporaryDirectory)
         }
 
         let item = SavedVocabularyItem(
@@ -35,12 +42,38 @@ struct SavedVocabularyHarness {
             savedAt: Date(timeIntervalSince1970: 1_700_000_000)
         )
 
-        let store = SavedVocabularyStore(defaults: defaults)
-        store.add(item)
-        store.add(item)
+        let legacyData = try JSONEncoder().encode([item])
+        defaults.set(
+            legacyData,
+            forKey: SavedVocabularyRepository.legacyStorageKey
+        )
+        let archiveURL = temporaryDirectory
+            .appendingPathComponent("saved-vocabulary.json")
+        let store = SavedVocabularyStore(
+            repository: SavedVocabularyRepository(
+                fileURL: archiveURL,
+                legacyDefaults: defaults
+            )
+        )
+        await store.load()
         guard store.items == [item] else { exit(3) }
+        guard FileManager.default.fileExists(atPath: archiveURL.path),
+              defaults.data(
+                forKey: SavedVocabularyRepository.legacyStorageKey
+              ) == nil else {
+            exit(9)
+        }
 
-        let reloadedStore = SavedVocabularyStore(defaults: defaults)
+        await store.add(item)
+        guard store.items == [item] else { exit(10) }
+
+        let reloadedStore = SavedVocabularyStore(
+            repository: SavedVocabularyRepository(
+                fileURL: archiveURL,
+                legacyDefaults: defaults
+            )
+        )
+        await reloadedStore.load()
         guard reloadedStore.items == [item],
               reloadedStore.items[0].dictionaryEntry.headword == "手に入れる" else {
             exit(4)
@@ -114,9 +147,104 @@ struct SavedVocabularyHarness {
             exit(8)
         }
 
-        reloadedStore.remove(item.id)
-        guard SavedVocabularyStore(defaults: defaults).items.isEmpty else {
+        await reloadedStore.remove(item.id)
+        let emptyReloadedStore = SavedVocabularyStore(
+            repository: SavedVocabularyRepository(
+                fileURL: archiveURL,
+                legacyDefaults: defaults
+            )
+        )
+        await emptyReloadedStore.load()
+        guard emptyReloadedStore.items.isEmpty else {
             exit(5)
+        }
+
+        let corruptSuiteName = "\(suiteName)-corrupt"
+        guard let corruptDefaults = UserDefaults(suiteName: corruptSuiteName) else {
+            exit(11)
+        }
+        defer {
+            corruptDefaults.removePersistentDomain(forName: corruptSuiteName)
+        }
+        corruptDefaults.set(
+            legacyData,
+            forKey: SavedVocabularyRepository.legacyStorageKey
+        )
+        let corruptArchiveURL = temporaryDirectory
+            .appendingPathComponent("corrupt-vocabulary.json")
+        let corruptData = Data("not valid JSON".utf8)
+        try corruptData.write(to: corruptArchiveURL)
+        let corruptStore = SavedVocabularyStore(
+            repository: SavedVocabularyRepository(
+                fileURL: corruptArchiveURL,
+                legacyDefaults: corruptDefaults
+            )
+        )
+        await corruptStore.load()
+        guard case .failed = corruptStore.state,
+              corruptStore.items.isEmpty,
+              try Data(contentsOf: corruptArchiveURL) == corruptData,
+              corruptDefaults.data(
+                forKey: SavedVocabularyRepository.legacyStorageKey
+              ) == legacyData else {
+            exit(12)
+        }
+
+        await corruptStore.add(item)
+        guard try Data(contentsOf: corruptArchiveURL) == corruptData else {
+            exit(13)
+        }
+
+        let unsupportedArchiveURL = temporaryDirectory
+            .appendingPathComponent("unsupported-vocabulary.json")
+        let unsupportedData = Data(
+            "{\"schemaVersion\":999,\"items\":[]}".utf8
+        )
+        try unsupportedData.write(to: unsupportedArchiveURL)
+        let unsupportedStore = SavedVocabularyStore(
+            repository: SavedVocabularyRepository(
+                fileURL: unsupportedArchiveURL,
+                legacyDefaults: defaults
+            )
+        )
+        await unsupportedStore.load()
+        guard case .failed(let unsupportedMessage) = unsupportedStore.state,
+              unsupportedMessage.contains("unsupported schema version 999"),
+              try Data(contentsOf: unsupportedArchiveURL) == unsupportedData else {
+            exit(14)
+        }
+
+        let failedMigrationSuiteName = "\(suiteName)-failed-migration"
+        guard let failedMigrationDefaults = UserDefaults(
+            suiteName: failedMigrationSuiteName
+        ) else {
+            exit(15)
+        }
+        defer {
+            failedMigrationDefaults.removePersistentDomain(
+                forName: failedMigrationSuiteName
+            )
+        }
+        failedMigrationDefaults.set(
+            legacyData,
+            forKey: SavedVocabularyRepository.legacyStorageKey
+        )
+        let blockedParentURL = temporaryDirectory
+            .appendingPathComponent("not-a-directory")
+        try Data("occupied".utf8).write(to: blockedParentURL)
+        let failedMigrationStore = SavedVocabularyStore(
+            repository: SavedVocabularyRepository(
+                fileURL: blockedParentURL
+                    .appendingPathComponent("saved-vocabulary.json"),
+                legacyDefaults: failedMigrationDefaults
+            )
+        )
+        await failedMigrationStore.load()
+        guard case .failed = failedMigrationStore.state,
+              failedMigrationDefaults.data(
+                forKey: SavedVocabularyRepository.legacyStorageKey
+              ) == legacyData else {
+            exit(16)
         }
 
         print("saved vocabulary persistence ok")

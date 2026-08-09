@@ -1,7 +1,7 @@
 import Combine
 import Foundation
 
-enum SavedVocabularyKind: String, Codable {
+enum SavedVocabularyKind: String, Codable, Sendable {
     case word
     case expression
 
@@ -13,7 +13,7 @@ enum SavedVocabularyKind: String, Codable {
     }
 }
 
-struct SavedVocabularyItem: Codable, Hashable, Identifiable {
+struct SavedVocabularyItem: Codable, Hashable, Identifiable, Sendable {
     let id: String
     let dictionaryEntryID: String
     let kind: SavedVocabularyKind
@@ -74,43 +74,73 @@ struct SavedVocabularyItem: Codable, Hashable, Identifiable {
 
 @MainActor
 final class SavedVocabularyStore: ObservableObject {
-    @Published private(set) var items: [SavedVocabularyItem]
+    enum State: Equatable {
+        case loading
+        case ready
+        case failed(String)
+    }
 
-    private let defaults: UserDefaults
-    private let storageKey = "savedVocabulary.v1"
+    @Published private(set) var items: [SavedVocabularyItem] = []
+    @Published private(set) var state: State = .loading
+    @Published private(set) var errorMessage: String?
 
-    init(defaults: UserDefaults = .standard) {
-        self.defaults = defaults
+    private let repository: SavedVocabularyRepository
+    private var appliedRevision = -1
 
-        guard let data = defaults.data(forKey: storageKey),
-              let savedItems = try? JSONDecoder().decode(
-                [SavedVocabularyItem].self,
-                from: data
-              ) else {
-            items = []
-            return
-        }
-
-        items = savedItems.sorted { $0.savedAt > $1.savedAt }
+    init(repository: SavedVocabularyRepository = SavedVocabularyRepository()) {
+        self.repository = repository
     }
 
     func contains(_ itemID: String) -> Bool {
         items.contains { $0.id == itemID }
     }
 
-    func add(_ item: SavedVocabularyItem) {
-        guard !contains(item.id) else { return }
-        items.insert(item, at: 0)
-        persist()
+    var isReady: Bool {
+        state == .ready
     }
 
-    func remove(_ itemID: String) {
-        items.removeAll { $0.id == itemID }
-        persist()
+    func load() async {
+        errorMessage = nil
+        state = .loading
+        do {
+            apply(try await repository.load())
+            state = .ready
+        } catch {
+            let message = error.localizedDescription
+            state = .failed(message)
+            errorMessage = message
+        }
     }
 
-    private func persist() {
-        guard let data = try? JSONEncoder().encode(items) else { return }
-        defaults.set(data, forKey: storageKey)
+    func add(_ item: SavedVocabularyItem) async {
+        guard isReady else { return }
+        do {
+            apply(try await repository.add(item))
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func remove(_ itemID: String) async {
+        await remove([itemID])
+    }
+
+    func remove(_ itemIDs: Set<String>) async {
+        guard isReady else { return }
+        do {
+            apply(try await repository.remove(itemIDs))
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func clearError() {
+        errorMessage = nil
+    }
+
+    private func apply(_ snapshot: SavedVocabularySnapshot) {
+        guard snapshot.revision >= appliedRevision else { return }
+        appliedRevision = snapshot.revision
+        items = snapshot.items
     }
 }

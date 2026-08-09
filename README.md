@@ -105,9 +105,13 @@ release regularly before shipping. See the [official JMdict project](https://www
   performs ranked, lemma-first JMdict lookup.
 - `DictionaryEntrySheet.swift` shows readings, meanings, and the persistent
   save/remove interaction for My List.
-- `SavedVocabularyStore.swift` persists complete saved word and expression
-  records, including source text, as a small versioned JSON payload in app
-  preferences.
+- `SavedVocabularyRepository.swift` serializes vocabulary mutations through an
+  actor and stores complete word and expression records, including source text,
+  in a versioned JSON archive under Application Support. Writes are atomic and
+  protected while the device is locked. Existing `savedVocabulary.v1`
+  preference data is migrated only after the new archive is verified.
+- `SavedVocabularyStore.swift` exposes repository loading, failure, and saved
+  item state to SwiftUI without treating unreadable data as an empty list.
 - `SourcesView.swift` displays the bundled JMdict release, attribution, and
   licence link.
 - `tools/build_jmdict.py` downloads and converts the English-only JMdict NG
