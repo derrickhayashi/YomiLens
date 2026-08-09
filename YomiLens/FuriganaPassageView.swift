@@ -3,28 +3,48 @@ import SwiftUI
 import UIKit
 
 final class RubyTextView: UIView {
-    var textInsets = UIEdgeInsets.zero
+    var textInsets = UIEdgeInsets.zero {
+        didSet {
+            guard textInsets != oldValue else { return }
+            invalidateTextLayout()
+        }
+    }
     var attributedText = NSAttributedString(string: "") {
         didSet {
-            framesetter = CTFramesetterCreateWithAttributedString(
-                attributedText as CFAttributedString
-            )
-            invalidateIntrinsicContentSize()
-            setNeedsDisplay()
+            invalidateTextLayout()
         }
     }
 
     private var framesetter: CTFramesetter?
+    private var lastDrawnSize = CGSize.zero
 
     override init(frame: CGRect) {
         super.init(frame: frame)
         backgroundColor = .clear
         isOpaque = false
         contentMode = .redraw
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(applicationDidBecomeActive),
+            name: UIApplication.didBecomeActiveNotification,
+            object: nil
+        )
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+
+        guard bounds.size != lastDrawnSize else { return }
+        lastDrawnSize = bounds.size
+        setNeedsDisplay()
     }
 
     override func draw(_ rect: CGRect) {
@@ -125,6 +145,23 @@ final class RubyTextView: UIView {
         }
 
         return nil
+    }
+
+    @objc private func applicationDidBecomeActive() {
+        // Core Text can retain stale ruby positions when this UIView survives
+        // suspension. Rebuilding the framesetter keeps glyphs, ruby, and hit
+        // testing on the same freshly measured frame after foregrounding.
+        invalidateTextLayout()
+    }
+
+    private func invalidateTextLayout() {
+        framesetter = CTFramesetterCreateWithAttributedString(
+            attributedText as CFAttributedString
+        )
+        lastDrawnSize = .zero
+        invalidateIntrinsicContentSize()
+        setNeedsLayout()
+        setNeedsDisplay()
     }
 
     private func textFrame(in bounds: CGRect) -> CTFrame? {

@@ -25,7 +25,7 @@ struct SourcesView: View {
                     Text("Japanese OCR uses Apple Vision. Tokenization, readings, and lemmas use MeCab with IPADic.")
                 }
             }
-            .navigationTitle("Sources")
+            .navigationTitle("About")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {

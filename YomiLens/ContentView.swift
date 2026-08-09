@@ -2,6 +2,8 @@ import SwiftUI
 import UIKit
 
 struct ContentView: View {
+    @Environment(\.scenePhase) private var scenePhase
+
     @State private var isShowingCamera = false
     @State private var isRecognizing = false
     @State private var capturedImage: UIImage?
@@ -11,7 +13,9 @@ struct ContentView: View {
     @State private var selectedToken: JapaneseToken?
     @State private var learnedEntryIDs: Set<String> = []
     @State private var errorMessage: String?
-    @State private var isShowingSources = false
+    @State private var isShowingMyList = false
+    @State private var isShowingAbout = false
+    @State private var passageRenderGeneration = 0
 
     var body: some View {
         NavigationStack {
@@ -65,6 +69,7 @@ struct ContentView: View {
                             ) { token in
                                 selectedToken = token
                             }
+                            .id(passageRenderGeneration)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.vertical, 8)
                             .accessibilityElement(children: .ignore)
@@ -102,30 +107,19 @@ struct ContentView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
 
-                    Button {
-                        openCamera()
-                    } label: {
-                        Label("Scan Game Text", systemImage: "camera")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .disabled(isRecognizing)
                 }
                 .padding()
             }
             .navigationTitle("YomiLens")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        isShowingSources = true
-                    } label: {
-                        Label("Sources", systemImage: "info.circle")
-                    }
-                }
-            }
             .onChange(of: recognizedText) { _, newText in
                 tokenization = JapaneseTokenizer.tokenize(newText)
+            }
+            .onChange(of: scenePhase) { _, newPhase in
+                guard newPhase == .active else { return }
+
+                // Recreate the Core Text-backed view after suspension so
+                // SwiftUI measures it from the same fresh layout it draws.
+                passageRenderGeneration += 1
             }
             .sheet(item: $selectedToken) { token in
                 DictionaryEntrySheet(
@@ -133,7 +127,10 @@ struct ContentView: View {
                     learnedEntryIDs: $learnedEntryIDs
                 )
             }
-            .sheet(isPresented: $isShowingSources) {
+            .sheet(isPresented: $isShowingMyList) {
+                MyListView(selectedWordCount: learnedEntryIDs.count)
+            }
+            .sheet(isPresented: $isShowingAbout) {
                 SourcesView()
             }
             .fullScreenCover(isPresented: $isShowingCamera) {
@@ -150,7 +147,78 @@ struct ContentView: View {
                 )
                 .ignoresSafeArea()
             }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                bottomMenuBar
+            }
         }
+    }
+
+    private var bottomMenuBar: some View {
+        HStack(alignment: .bottom) {
+            menuButton(
+                title: "My List",
+                systemImage: "bookmark"
+            ) {
+                isShowingMyList = true
+            }
+
+            Spacer(minLength: 12)
+
+            Button {
+                openCamera()
+            } label: {
+                VStack(spacing: 4) {
+                    Image(systemName: "camera.fill")
+                        .font(.title2)
+                        .foregroundStyle(.white)
+                        .frame(width: 52, height: 52)
+                        .background(.tint, in: Circle())
+
+                    Text("Scan Text")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                }
+                .frame(width: 96)
+            }
+            .buttonStyle(.plain)
+            .disabled(isRecognizing)
+            .opacity(isRecognizing ? 0.5 : 1)
+
+            Spacer(minLength: 12)
+
+            menuButton(
+                title: "About",
+                systemImage: "info.circle"
+            ) {
+                isShowingAbout = true
+            }
+        }
+        .padding(.horizontal, 24)
+        .padding(.top, 8)
+        .padding(.bottom, 4)
+        .background(.bar)
+        .overlay(alignment: .top) {
+            Divider()
+        }
+    }
+
+    private func menuButton(
+        title: String,
+        systemImage: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            VStack(spacing: 5) {
+                Image(systemName: systemImage)
+                    .font(.title3)
+
+                Text(title)
+                    .font(.caption)
+            }
+            .frame(width: 88, height: 52)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     private func openCamera() {
@@ -187,6 +255,37 @@ struct ContentView: View {
             }
         } catch {
             errorMessage = "OCR failed: \(error.localizedDescription)"
+        }
+    }
+}
+
+private struct MyListView: View {
+    let selectedWordCount: Int
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ContentUnavailableView {
+                Label("My List", systemImage: "bookmark")
+            } description: {
+                Text("Saved vocabulary will appear here when persistent word lists are added.")
+            } actions: {
+                if selectedWordCount > 0 {
+                    Text("\(selectedWordCount) selected in this session")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle("My List")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
         }
     }
 }
