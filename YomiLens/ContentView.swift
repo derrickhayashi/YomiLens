@@ -8,6 +8,10 @@ private enum AppPage: Hashable {
     case dictionaryDetails(DictionarySelection, sourceText: String)
 }
 
+private enum PageScrollTarget: Hashable {
+    case readPassage
+}
+
 struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject private var vocabularyStore: SavedVocabularyStore
@@ -27,11 +31,13 @@ struct ContentView: View {
     @State private var navigationPath: [AppPage] = []
     @State private var isWordBreakdownExpanded = false
     @State private var passageRenderGeneration = 0
+    @State private var shouldScrollToPassageAfterAnalysis = false
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            ScrollView {
-                VStack(spacing: 20) {
+            ScrollViewReader { scrollProxy in
+                ScrollView {
+                    VStack(spacing: 20) {
                     if isRecognizing {
                         ProgressView("Recognizing Japanese…")
                     }
@@ -125,14 +131,27 @@ struct ContentView: View {
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .id(PageScrollTarget.readPassage)
                     }
 
+                    }
+                    .padding()
                 }
-                .padding()
-            }
             .navigationTitle("YomiLens")
             .onChange(of: recognizedText) { _, newText in
                 scheduleAnalysis(for: newText)
+            }
+            .onChange(of: tokenization.tokens.isEmpty) { _, isEmpty in
+                guard !isEmpty,
+                      shouldScrollToPassageAfterAnalysis else { return }
+
+                shouldScrollToPassageAfterAnalysis = false
+                withAnimation {
+                    scrollProxy.scrollTo(
+                        PageScrollTarget.readPassage,
+                        anchor: .top
+                    )
+                }
             }
             .onChange(of: scenePhase) { _, newPhase in
                 guard newPhase == .active else { return }
@@ -201,6 +220,7 @@ struct ContentView: View {
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 bottomMenuBar
+            }
             }
         }
     }
@@ -363,6 +383,7 @@ struct ContentView: View {
         recognizedText = ""
         tokenization = .empty
         isWordBreakdownExpanded = false
+        shouldScrollToPassageAfterAnalysis = false
         isRecognizing = true
         errorMessage = nil
 
@@ -375,6 +396,7 @@ struct ContentView: View {
 
         do {
             let result = try await OCRService.recognizeJapanese(in: image)
+            shouldScrollToPassageAfterAnalysis = !result.text.isEmpty
             recognizedText = result.text
             recognizedRegions = result.regions
 
