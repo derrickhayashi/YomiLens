@@ -8,6 +8,15 @@ private enum AppPage: Hashable {
     case dictionaryDetails(DictionarySelection, sourceText: String)
 }
 
+private struct DictionaryPresentation: Identifiable {
+    let selection: DictionarySelection
+    let sourceText: String
+
+    var id: String {
+        selection.id
+    }
+}
+
 private enum PageScrollTarget: Hashable {
     case readPassage
 }
@@ -29,6 +38,7 @@ struct ContentView: View {
         DebouncedAnalysisScheduler<JapaneseTokenization>()
     @State private var errorMessage: String?
     @State private var navigationPath: [AppPage] = []
+    @State private var dictionaryPresentation: DictionaryPresentation?
     @State private var isWordBreakdownExpanded = false
     @State private var passageRenderGeneration = 0
     @State private var shouldScrollToPassageAfterAnalysis = false
@@ -223,6 +233,12 @@ struct ContentView: View {
             }
             }
         }
+        .sheet(item: $dictionaryPresentation) { presentation in
+            DictionaryEntrySheet(
+                selection: presentation.selection,
+                sourceText: presentation.sourceText
+            )
+        }
         .alert(
             "Vocabulary Storage Error",
             isPresented: Binding(
@@ -339,11 +355,9 @@ struct ContentView: View {
     private func showDictionaryDetails(
         _ selection: DictionarySelection
     ) {
-        navigationPath.append(
-            .dictionaryDetails(
-                selection,
-                sourceText: recognizedText
-            )
+        dictionaryPresentation = DictionaryPresentation(
+            selection: selection,
+            sourceText: recognizedText
         )
     }
 

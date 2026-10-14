@@ -17,6 +17,31 @@ enum DictionarySelection: Hashable, Identifiable {
     }
 }
 
+struct DictionaryEntrySheet: View {
+    let selection: DictionarySelection
+    let sourceText: String
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            DictionaryEntryView(
+                selection: selection,
+                sourceText: sourceText
+            )
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+}
+
 struct DictionaryEntryView: View {
     let selection: DictionarySelection
     let sourceText: String
