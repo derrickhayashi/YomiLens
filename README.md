@@ -143,6 +143,16 @@ history, custom camera, or backend. Vocabulary definitions and My List remain
 fully offline at runtime.
 
 IPADic is old and will not recognize every proper noun, game-specific term, or
-modern expression. Before distribution, review the licenses of Mecab-Swift,
-MeCab, and the bundled dictionary and evaluate a newer dictionary such as
-UniDic.
+modern expression. See [third-party notices](THIRD_PARTY_NOTICES.md) for Mecab-Swift, MeCab,
+IPADic, and JMdict licensing and distribution requirements. Evaluate a newer
+dictionary such as UniDic when improving coverage.
+
+## License and contributions
+
+YomiLens's original code is available under the [MIT License](LICENSE), which
+allows reuse, modification, and commercial use while retaining the notice.
+Third-party dependencies and dictionary data retain their own licenses; see
+[third-party notices](THIRD_PARTY_NOTICES.md).
+
+Contributions are welcome. See [contribution guidance](CONTRIBUTING.md) for
+pull requests, development checks, licensing, and privacy requirements.
