@@ -39,6 +39,17 @@ for individual lookup.
 6. Enable Developer Mode on the iPhone if prompted.
 7. On first launch, allow camera access.
 
+The shared project has no default Apple developer team. To keep your team
+selection local instead of editing the shared project, copy
+`Config/Signing.local.xcconfig.example` to `Config/Signing.local.xcconfig` and
+replace `YOUR_TEAM_ID` with your team ID. The local file is ignored by Git and
+applies to both the app and test targets in Debug and Release. Xcode still needs
+access to your signing account and certificates. If you previously selected a
+team directly in Xcode, that target-level setting takes precedence; clear it to
+use the local configuration.
+
+Simulator builds do not require an Apple developer team or the local file.
+
 After the iPhone has been paired with Xcode, enable wireless device connection
 if you do not want to keep it connected by cable.
 

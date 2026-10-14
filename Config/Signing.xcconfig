@@ -1,0 +1,4 @@
+// Shared builds have no default Apple developer team.
+// An optional, ignored file supplies this checkout's signing settings.
+DEVELOPMENT_TEAM =
+#include? "Signing.local.xcconfig"

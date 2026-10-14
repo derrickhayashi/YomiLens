@@ -1,0 +1,3 @@
+// Copy to Signing.local.xcconfig and enter your Apple developer team ID.
+DEVELOPMENT_TEAM = YOUR_TEAM_ID
+// If needed, set unique bundle identifiers in Xcode for the app and test targets.

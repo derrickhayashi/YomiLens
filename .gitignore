@@ -12,3 +12,6 @@ YomiLensTests/Fixtures/*.jpg
 YomiLensTests/Fixtures/*.jpeg
 YomiLensTests/Fixtures/*.png
 YomiLensTests/Fixtures/*.heic
+
+# Per-checkout Apple signing settings.
+/Config/Signing.local.xcconfig
